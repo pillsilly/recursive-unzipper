@@ -41,7 +41,7 @@ class ZipExplorer {
         await this.processDir(directory, sum)
 
         const ff = sum.map(xx => xx && xx.path);
-        console.log(ff);
+        console.log(JSON.stringify(ff));
     }
 
     async processDir(directory, sum) {
