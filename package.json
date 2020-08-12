@@ -18,5 +18,8 @@
   "homepage": "https://github.com/pillsilly/InterractiveUnzipper#readme",
   "dependencies": {
     "unzipper": "^0.10.11"
+  },
+  "devDependencies": {
+    "jest": "^26.4.2"
   }
 }
