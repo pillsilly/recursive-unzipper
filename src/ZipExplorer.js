@@ -1,7 +1,6 @@
 const unzipper = require('unzipper');
 const fs = require('fs');
 const path = require('path');
-const each = require('async-each');
 const _ = require('lodash')
 const zipSuffix = '.zip';
 var lzma = require('lzma-native');
