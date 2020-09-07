@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/pillsilly/InterractiveUnzipper#readme",
   "dependencies": {
+    "async-each": "^1.0.3",
     "unzipper": "^0.10.11"
   },
   "devDependencies": {

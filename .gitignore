@@ -1,2 +1,4 @@
 node_modules
 test/resource/*
+bash.exe.stackdump
+snapshot.zip
