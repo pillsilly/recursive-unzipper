@@ -1,49 +1,65 @@
-const { ZipExplorer } = require('../src/ZipExplorer')
+const {ZipExplorer} = require('../src/ZipExplorer')
 const fs = require('fs');
 describe('Name of the group', () => {
-    const path = 'test/resource/run.zip'
+  const path = 'test/resource/run.zip'
 
-    let explorer = new ZipExplorer(path);
-    beforeEach(() => {
+  let explorer = new ZipExplorer(path);
+  beforeEach(() => {
 
-    });
+  });
+
+  test('123', async () => {
+    const p = 'C:\\Users\\pills\\code\\InterractiveUnzipper\\test\\resource\\1.log.xz';
+    var lzma = require('lzma-native');
+    const buffer = fs.readFileSync(p);
+    // lzma.decompress(buffer, function(decompressedResult) {
+    //   console.log(decompressedResult.toString())
+    //   done()
+    //   // assert.equal(decompressedResult.toString(), 'Bananas');
+    // });
 
 
-    test.only('should traverse all zip directory', async () => {
-        explorer = new ZipExplorer('test/resource/snapshot.zip')
-        const files = await explorer.getAllFiles()
-        // files.forEach(e => console.log(`${e.parentPath}/${e.path}`));
+    await new ZipExplorer(path).extractLZMACompressedFile(buffer, '1.txt')
 
-        await Promise.all(files.filter(f => !f.isZip).map(f => f.extractToDefault()));
-    });
+  });
 
-    test('should work for snapshot files', async () => {
-        explorer = new ZipExplorer('test/resource/snapshot.zip')
-        const list = await explorer.listAll();
+  test('should traverse all zip directory', async () => {
+    explorer = new ZipExplorer('test/resource/snapshot.zip')
+    const files = await explorer.getAllFiles()
+    // files.forEach(e => console.log(`${e.parentPath}/${e.path}`));
 
-        const childrenZip = await list[0].getDirectory();
-        console.log(list)
-    });
+    await Promise.all(files.filter(f => !f.isZip)
+      .map(f => f.extractToDefault())
+    );
+  });
 
-    test('should list all entry path', async () => {
-        const list = await explorer.listAll().then(l => l.map(({ path }) => path));
+  test('should work for snapshot files', async () => {
+    explorer = new ZipExplorer('test/resource/snapshot.zip')
+    const list = await explorer.listAll();
 
-        expect(list).toEqual([
-            "123/",
-            "123/run.js",
-            "run.js",
-        ]);
-    });
+    const childrenZip = await list[0].getDirectory();
+    console.log(list)
+  });
 
-    test('should list all entry path with given Regular expression', async () => {
-        const list = await explorer.listAll(/.js/).then(l => l.map(({ path }) => path));
-        expect(list).toEqual([
-            "123/run.js",
-            "run.js",
-        ]);
-    });
+  test('should list all entry path', async () => {
+    const list = await explorer.listAll().then(l => l.map(({path}) => path));
 
-    afterEach(() => {
+    expect(list).toEqual([
+      "123/",
+      "123/run.js",
+      "run.js",
+    ]);
+  });
 
-    });
+  test('should list all entry path with given Regular expression', async () => {
+    const list = await explorer.listAll(/.js/).then(l => l.map(({path}) => path));
+    expect(list).toEqual([
+      "123/run.js",
+      "run.js",
+    ]);
+  });
+
+  afterEach(() => {
+
+  });
 });
