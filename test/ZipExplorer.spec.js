@@ -14,7 +14,7 @@ describe('Name of the group', () => {
         const files = await explorer.getAllFiles()
         // files.forEach(e => console.log(`${e.parentPath}/${e.path}`));
 
-        await Promise.all(files.filter(f => f.isZip).map(f => f.extractToDefault()));
+        await Promise.all(files.filter(f => !f.isZip).map(f => f.extractToDefault()));
     });
 
     test('should work for snapshot files', async () => {
