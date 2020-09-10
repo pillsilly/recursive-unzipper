@@ -10,24 +10,13 @@ describe('Name of the group', () => {
 
   test('123', async () => {
     const p = 'C:\\Users\\pills\\code\\InterractiveUnzipper\\test\\resource\\1.log.xz';
-    var lzma = require('lzma-native');
     const buffer = fs.readFileSync(p);
-    // lzma.decompress(buffer, function(decompressedResult) {
-    //   console.log(decompressedResult.toString())
-    //   done()
-    //   // assert.equal(decompressedResult.toString(), 'Bananas');
-    // });
-
-
     await new ZipExplorer(path).extractLZMACompressedFile(buffer, '1.txt')
-
   });
 
   test('should traverse all zip directory', async () => {
     explorer = new ZipExplorer('test/resource/snapshot.zip')
     const files = await explorer.getAllFiles()
-    // files.forEach(e => console.log(`${e.parentPath}/${e.path}`));
-
     await Promise.all(files.filter(f => !f.isZip)
       .map(f => f.extractToDefault())
     );

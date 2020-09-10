@@ -1,84 +1,88 @@
-const unzipper = require('unzipper');
+const unZipper = require('unzipper');
 const fs = require('fs');
 const path = require('path');
-const _ = require('lodash')
-const zipSuffix = '.zip';
-var lzma = require('lzma-native');
+const _ = require('lodash');
+const ZIP_SUFFIX = '.zip';
+const lzma = require('lzma-native');
 
 class ZipExplorer {
 
   constructor(zipPath) {
-    this.processDir = this.processDir.bind(this)
-    this.addtoS = this.addtoS.bind(this)
+    this.prepareFile = this.prepareFile.bind(this);
+    this.openZip = this.openZip.bind(this);
     this.extractLZMACompressedFile = this.extractLZMACompressedFile.bind(this);
+    this.extractToDefault = this.extractToDefault.bind(this);
     this.zipPath = zipPath;
   }
 
   async getAllFiles() {
     const buffer = fs.readFileSync(this.zipPath);
-    const directory = await unzipper.Open.buffer(buffer);
-    const sum = []
-    await this.processDir(directory, sum, this.zipPath)
+    const directory = await unZipper.Open.buffer(buffer);
+    const sum = [];
+    await this.prepareFile(directory, sum, this.zipPath);
     return sum;
   }
 
   async extractLZMACompressedFile(buffer, destPath) {
-    const promise = new Promise(resolve => {
+    return new Promise(resolve => {
       lzma.decompress(buffer, function (decompressedResult) {
         fs.writeFile(path.resolve(destPath), decompressedResult, () => {
           resolve()
         })
       });
     });
-    return promise;
   }
 
-  async processDir(directory, sum, zipPath) {
-    directory.files.forEach(f => {
-      f.parentPath = zipPath
-      f.extractToDefault = async () => {
-        let folder = _.replace(path.resolve(`${f.parentPath}`), /\.zip/g, '_zip');
-        createDirIfNotExist(folder);
-        const buffer = await f.buffer();
-        if (f.isXZ) {
-          await this.extractLZMACompressedFile(buffer, `${folder}/${f.path.replace('.xz', '')}`)
-        } else {
-          fs.writeFileSync(`${folder}/${f.path}`, buffer);
-        }
-      }
-      f.isZip = isZip(f);
-      f.isXZ = isXZ(f)
-    })
+  async prepareFile(directory, sum, zipPath) {
+    directory.files.forEach(file => {
+      file.parentPath = zipPath;
+      file.isZip = isZip(file);
+      file.isXZ = isXZ(file);
+      file.extractToDefault = this.extractToDefault(file);
+    });
     sum.push(...directory.files);
-    const subzips = directory.files.filter(isZip);
+    const zipFiles = directory.files.filter(isZip);
 
-    return Promise.all(subzips.map(zip => this.addtoS(sum)(zip)));
+    return Promise.all(zipFiles.map(this.openZip(sum)));
   }
 
-  addtoS(sum) {
+  extractToDefault(file) {
+    return async () => {
+      let folder = _.replace(path.resolve(`${file.parentPath}`), /\.zip/g, '_zip');
+      createDirIfNotExist(folder);
+      const buffer = await file.buffer();
+      if (file.isXZ) {
+        await this.extractLZMACompressedFile(buffer, `${folder}/${file.path.replace('.xz', '')}`)
+      } else {
+        await fs.writeFileSync(`${folder}/${file.path}`, buffer);
+      }
+    }
+  }
+
+  openZip(sum) {
     return async (zip) => {
       const buffer = await zip.buffer();
-      const directory = await unzipper.Open.buffer(buffer);
-      await this.processDir(directory, sum, `${zip.parentPath}/${zip.path}`);
+      const directory = await unZipper.Open.buffer(buffer);
+      await this.prepareFile(directory, sum, `${zip.parentPath}/${zip.path}`);
     }
   }
 }
 
 module.exports = {
   ZipExplorer
-}
+};
 
 function isZip(file) {
-  return file.path && (file.path.endsWith(zipSuffix)
-  )
+  return file.path && (file.path.endsWith(ZIP_SUFFIX))
 }
 
 function isXZ(file) {
   return file.path && file.path.endsWith('.xz');
 }
 
+
 function createDirIfNotExist(toCreateDir) {
-  console.log(`creating dir ${toCreateDir}`)
+  console.log(`Creating dir ${toCreateDir}`);
   if (!fs.existsSync(toCreateDir))
     fs.mkdirSync(toCreateDir, {recursive: true});
 }
