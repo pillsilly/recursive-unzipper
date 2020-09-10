@@ -80,7 +80,6 @@ function isXZ(file) {
   return file.path && file.path.endsWith('.xz');
 }
 
-
 function createDirIfNotExist(toCreateDir) {
   console.log(`Creating dir ${toCreateDir}`);
   if (!fs.existsSync(toCreateDir))

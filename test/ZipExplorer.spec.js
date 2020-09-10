@@ -1,5 +1,7 @@
 const {ZipExplorer} = require('../src/ZipExplorer')
 const fs = require('fs');
+const unZipper = require('unzipper');
+
 describe('Name of the group', () => {
   const path = 'test/resource/run.zip'
 
@@ -8,10 +10,17 @@ describe('Name of the group', () => {
 
   });
 
-  test('123', async () => {
+  test('should extract lzma compressed file', async () => {
     const p = 'C:\\Users\\pills\\code\\InterractiveUnzipper\\test\\resource\\1.log.xz';
     const buffer = fs.readFileSync(p);
     await new ZipExplorer(path).extractLZMACompressedFile(buffer, '1.txt')
+  });
+
+
+  test('should extract tar compressed file', async () => {
+    const p = 'C:\\Users\\pills\\code\\InterractiveUnzipper\\test\\resource\\BTS1_123D_linux_logs.tar';
+    await unZipper.Open.file(p)
+      .then(d => d.extract({path: './'}));
   });
 
   test('should traverse all zip directory', async () => {
