@@ -81,7 +81,8 @@ function isXZ(file) {
 }
 
 function createDirIfNotExist(toCreateDir) {
+  if (fs.existsSync(toCreateDir)) return;
+
   console.log(`Creating dir ${toCreateDir}`);
-  if (!fs.existsSync(toCreateDir))
-    fs.mkdirSync(toCreateDir, {recursive: true});
+  fs.mkdirSync(toCreateDir, {recursive: true});
 }
