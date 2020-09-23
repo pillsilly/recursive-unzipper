@@ -70,19 +70,6 @@ const questions = [
   ...main
 ];
 
-
-// function ask(q) {
-//   inquirer.prompt(q).then((answers) => {
-//     if (answers.filter) {
-//       console.log(`listing file here...  regex is ${answers.filter}`);
-//       ask(main);
-//     } else {
-//       console.log('all done:', output.join(', '));
-//     }
-//   });
-// }
-//
-// ask(questions);
 let explorer;
 const {ZipExplorer} = require('../src/ZipExplorer');
 inquirer.prompt(start)
