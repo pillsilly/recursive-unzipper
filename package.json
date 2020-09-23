@@ -18,9 +18,10 @@
   },
   "homepage": "https://github.com/pillsilly/InterractiveUnzipper#readme",
   "dependencies": {
+    "inquirer": "^7.3.3",
+    "lodash": "latest",
     "lzma-native": "^6.0.1",
-    "unzipper": "^0.10.11",
-    "lodash": "latest"
+    "unzipper": "^0.10.11"
   },
   "devDependencies": {
     "jest": "^26.4.2"
