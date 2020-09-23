@@ -50,7 +50,7 @@ class ZipExplorer {
 
   extractToDefault(file) {
     return async () => {
-      let folder = _.replace(path.resolve(`${file.parentPath}`), /\.zip$/g, '_zip');
+      let folder = _.replace(path.resolve(`${file.parentPath}`), /\.zip/g, '_zip');
       await createDirIfNotExist(folder);
       const buffer = await file.buffer();
       if (file.isXZ) {
