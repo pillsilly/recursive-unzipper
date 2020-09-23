@@ -16,10 +16,12 @@ class ZipExplorer {
   }
 
   async getAllFiles() {
+    if (this.allFiles) return this.allFiles;
     const buffer = fs.readFileSync(this.zipPath);
     const directory = await unZipper.Open.buffer(buffer);
     const sum = [];
     await this.prepareFile(directory, sum, this.zipPath);
+    this.allFiles = sum;
     return sum;
   }
 
