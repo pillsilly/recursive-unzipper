@@ -50,13 +50,24 @@ class ZipExplorer {
 
   extractToDefault(file) {
     return async () => {
-      let folder = _.replace(path.resolve(`${file.parentPath}`), /\.zip/g, '_zip');
-      createDirIfNotExist(folder);
+      let folder = _.replace(path.resolve(`${file.parentPath}`), /\.zip$/g, '_zip');
+      await createDirIfNotExist(folder);
       const buffer = await file.buffer();
       if (file.isXZ) {
         await this.extractLZMACompressedFile(buffer, `${folder}/${file.path.replace('.xz', '')}`)
       } else {
-        await fs.writeFileSync(`${folder}/${file.path}`, buffer);
+        await new Promise(async (resolve) => {
+          const filePath = `${folder}/${file.path}`;
+          if (file.type === 'Directory') { 
+            createDirIfNotExist(filePath)
+              .then(resolve);
+          } else {
+            fs.writeFile(`${filePath}`, buffer, () => {
+              console.log(`File is writtern ${filePath}`);
+              resolve();
+            });  
+          }
+        })
       }
     }
   }
@@ -83,8 +94,14 @@ function isXZ(file) {
 }
 
 function createDirIfNotExist(toCreateDir) {
-  if (fs.existsSync(toCreateDir)) return;
+  if (fs.existsSync(toCreateDir)) return Promise.resolve();
 
   console.log(`Creating dir ${toCreateDir}`);
-  fs.mkdirSync(toCreateDir, {recursive: true});
+  return new Promise((resolve) => {
+    fs.mkdir(toCreateDir, { recursive: true }, () => {
+      console.log(`Dir is created ${toCreateDir}`);
+      resolve()
+    });
+  })
 }
+
