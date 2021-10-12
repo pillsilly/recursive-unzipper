@@ -15,6 +15,8 @@ class ZipExplorer {
     this.zipPath = zipPath;
   }
 
+  allFiles = null;
+
   async getAllFiles() {
     if (this.allFiles) return this.allFiles;
     const buffer = fs.readFileSync(this.zipPath);
@@ -25,12 +27,37 @@ class ZipExplorer {
     return sum;
   }
 
+  async getFiles({ dir, name }) {
+    const files = this.allFiles || await this.getAllFiles();
+    let filtered = files;
+    if (dir) {
+      filtered = files.filter(byDir(dir));
+    }
+
+    if (name) {
+      filtered = filtered.filter(byName(name));
+    }
+
+    function byDir(pathRegex) {
+      return (file) => {
+        return pathRegex.test(file.parentPath);
+      };
+    }
+
+    function byName(name) {
+      return (file) => {
+        return name.test(file.path);
+      };
+    }
+    return filtered;
+  }
+
   async extractLZMACompressedFile(buffer, destPath) {
     return new Promise(resolve => {
       lzma.decompress(buffer, function (decompressedResult) {
         fs.writeFile(path.resolve(destPath), decompressedResult, () => {
-          resolve()
-        })
+          resolve();
+        });
       });
     });
   }
@@ -54,22 +81,22 @@ class ZipExplorer {
       await createDirIfNotExist(folder);
       const buffer = await file.buffer();
       if (file.isXZ) {
-        await this.extractLZMACompressedFile(buffer, `${folder}/${file.path.replace('.xz', '')}`)
+        await this.extractLZMACompressedFile(buffer, `${folder}/${file.path.replace('.xz', '')}`);
       } else {
         await new Promise(async (resolve) => {
           const filePath = `${folder}/${file.path}`;
-          if (file.type === 'Directory') { 
+          if (file.type === 'Directory') {
             createDirIfNotExist(filePath)
               .then(resolve);
           } else {
             fs.writeFile(`${filePath}`, buffer, () => {
               console.log(`File is writtern ${filePath}`);
               resolve();
-            });  
+            });
           }
-        })
+        });
       }
-    }
+    };
   }
 
   openZip(sum) {
@@ -77,7 +104,7 @@ class ZipExplorer {
       const buffer = await zip.buffer();
       const directory = await unZipper.Open.buffer(buffer);
       await this.prepareFile(directory, sum, `${zip.parentPath}/${zip.path}`);
-    }
+    };
   }
 }
 
@@ -86,7 +113,7 @@ module.exports = {
 };
 
 function isZip(file) {
-  return file.path && (file.path.endsWith(ZIP_SUFFIX))
+  return file.path && (file.path.endsWith(ZIP_SUFFIX));
 }
 
 function isXZ(file) {
@@ -100,8 +127,8 @@ function createDirIfNotExist(toCreateDir) {
   return new Promise((resolve) => {
     fs.mkdir(toCreateDir, { recursive: true }, () => {
       console.log(`Dir is created ${toCreateDir}`);
-      resolve()
+      resolve();
     });
-  })
+  });
 }
 
