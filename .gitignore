@@ -3,4 +3,5 @@ test/resource/*
 bash.exe.stackdump
 snapshot*
 .idea
+dist/
 
