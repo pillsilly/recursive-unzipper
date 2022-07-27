@@ -6,6 +6,8 @@ import lzma from 'lzma-native';
 
 const ZIP_SUFFIX = '.zip';
 export type MyFileType = {
+  dir?: RegExp,
+  name?: RegExp,
   path: string
   parentPath: string
   isZip: boolean
@@ -35,30 +37,30 @@ export class ZipExplorer {
     return sum;
   }
 
-  // async getFiles(file: MyFileType) {
-  //   const files = this.allFiles || await this.getAllFiles();
-  //   let filtered = files;
-  //   if (file.dir) {
-  //     filtered = files.filter(byDir(file.dir));
-  //   }
-  //
-  //   if (file.name) {
-  //     filtered = filtered.filter(byName(file.name));
-  //   }
-  //
-  //   function byDir(pathRegex: RegExp) {
-  //     return (file: MyFileType) => {
-  //       return pathRegex.test(file.parentPath);
-  //     };
-  //   }
-  //
-  //   function byName(name: RegExp) {
-  //     return (file: MyFileType) => {
-  //       return name.test(file.path);
-  //     };
-  //   }
-  //   return filtered;
-  // }
+  async getFiles(file: Pick<MyFileType, 'dir' | 'name'>) {
+    const files = this.allFiles || await this.getAllFiles();
+    let filtered = files;
+    if (file.dir) {
+      filtered = files.filter(byDir(file.dir));
+    }
+
+    if (file.name) {
+      filtered = filtered.filter(byName(file.name));
+    }
+
+    function byDir(pathRegex: RegExp) {
+      return (file: MyFileType) => {
+        return pathRegex.test(file.parentPath);
+      };
+    }
+
+    function byName(name: RegExp) {
+      return (file: MyFileType) => {
+        return name.test(file.path);
+      };
+    }
+    return filtered;
+  }
 
   async extractLZMACompressedFile(buffer: Buffer, destPath: string) {
     return new Promise<void>(resolve => {
