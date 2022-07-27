@@ -1,15 +1,16 @@
-import {MyFileType} from "./ZipExplorer";
-
-const {ZipExplorer} = require('../src/ZipExplorer');
-
-module.exports = function run({file = '', dir='', name=''}) {
+import {FileHandlerType, ZipExplorer} from "./ZipExplorer";
+const BluebirdPromise  = require("bluebird");
+async function run({file = '', dir = '', name = ''}) {
   const explorer = new ZipExplorer(file);
   console.info(`Extracting  ${file} with option dir=${dir} name=${name}`);
-  explorer.getAllFiles()
-    .then((files: MyFileType[]) => {
-      return filterByDirAndName({files, dir, name})
-        .map((file: MyFileType) => file.extractToDefault())
-    })
+
+  let files = await explorer.getAllFiles();
+  files = filterByDirAndName({files, dir, name})
+  return BluebirdPromise 
+    .each(
+      files,
+      (file: FileHandlerType) => file.extractToDefault()
+    )
     .then(() => {
       console.info('Extraction completed')
     })
@@ -21,10 +22,9 @@ module.exports = function run({file = '', dir='', name=''}) {
     })
 };
 
-
-function filterByDirAndName({files, dir, name}: {files:MyFileType[], dir: string, name: string}) {
+function filterByDirAndName({files, dir, name}: { files: FileHandlerType[], dir: string, name: string }) {
   let filtered = files;
-  let dirRegex ;
+  let dirRegex;
   let nameRegex;
   if (dir) {
     dirRegex = new RegExp(dir);
@@ -39,14 +39,17 @@ function filterByDirAndName({files, dir, name}: {files:MyFileType[], dir: string
   return filtered;
 
   function byDir(pathRegex: RegExp) {
-    return (file: MyFileType) => {
+    return (file: FileHandlerType) => {
       return pathRegex.test(file.parentPath);
     }
   }
 
   function byName(name: RegExp) {
-    return (file: MyFileType) => {
+    return (file: FileHandlerType) => {
       return name.test(file.path);
     }
   }
 }
+
+
+export {run};

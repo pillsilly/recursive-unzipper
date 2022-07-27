@@ -71,7 +71,7 @@ const questions = [
 ];
 
 let explorer: ZipExplorer;
-import {MyFileType, ZipExplorer} from '../src/ZipExplorer';
+import {FileHandlerType, ZipExplorer} from '../src/ZipExplorer';
 import inquirer, {Answers, QuestionCollection} from 'inquirer';
 
 inquirer.prompt(start)
@@ -97,7 +97,7 @@ async function handleListFile(browsingModeAnswer: { [key: string]: string; }): P
 }
 
 
-function handleRegexList(allFiles: MyFileType[], filterImpl: Function) {
+function handleRegexList(allFiles: FileHandlerType[], filterImpl: Function) {
   return inquirer.prompt(INPUT_REGEX).then(a => {
     const regex = new RegExp(a.INPUT_REGEX);
     allFiles.filter(filterImpl(regex)).forEach(printFileLocation);
@@ -112,17 +112,17 @@ function doesNotExist(answer: string) {
 }
 
 function byDir(pathRegex: RegExp) {
-  return (file: MyFileType) => {
+  return (file: FileHandlerType) => {
     return pathRegex.test(file.parentPath);
   }
 }
 
 function byName(name: RegExp) {
-  return (file: MyFileType) => {
+  return (file: FileHandlerType) => {
     return name.test(file.path);
   }
 }
 
-function printFileLocation(f: MyFileType) {
+function printFileLocation(f: FileHandlerType) {
   console.log(`${f.parentPath}/${f.path}`)
 }

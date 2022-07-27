@@ -1,7 +1,11 @@
 node_modules
-test/resource/*
 bash.exe.stackdump
 snapshot*
 .idea
 dist/
+
+/.vscode/
+/coverage/
+/test/resource/tmp/
+/test/resource/run_zip
 
