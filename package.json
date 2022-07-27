@@ -7,7 +7,7 @@
   "scripts": {
     "test": "npx jest --debug",
     "compile": "tsc",
-    "release": "npm run compile && npx release-it"
+    "release": "npx release-it"
   },
   "repository": {
     "type": "git",
