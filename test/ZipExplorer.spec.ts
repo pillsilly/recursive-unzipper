@@ -1,9 +1,7 @@
 import path from "path";
 import {mkdirSync} from "fs";
-
 import {ZipExplorer} from '../src/ZipExplorer';
-
-const fs = require('fs');
+import fs from "fs";
 
 describe('Name of the group', () => {
   const path = 'test/resource/run.zip';
@@ -98,7 +96,7 @@ describe('Name of the group', () => {
   // });
 
   afterEach(() => {
-    if(fs.existsSync(tmp)) fs.rmdirSync(tmp, {recursive:true});
+    if(fs.existsSync(tmp)) fs.rm(tmp, {recursive: true}, () => {});
 
     // @ts-ignore
     explorer = null;
