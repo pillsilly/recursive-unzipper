@@ -2,7 +2,7 @@ import {MyFileType} from "./ZipExplorer";
 
 const {ZipExplorer} = require('../src/ZipExplorer');
 
-module.exports = function run({file = '', dir='', name=''}) {
+function run({file = '', dir='', name=''}) {
   const explorer = new ZipExplorer(file);
   console.info(`Extracting  ${file} with option dir=${dir} name=${name}`);
   explorer.getAllFiles()
@@ -50,3 +50,6 @@ function filterByDirAndName({files, dir, name}: {files:MyFileType[], dir: string
     }
   }
 }
+
+
+export {run};

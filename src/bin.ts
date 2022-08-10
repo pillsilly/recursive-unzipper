@@ -1,14 +1,28 @@
 #!/usr/bin/env node
-console.log('\x1b[36m', 'Usage: interractiveunzipper \n' ,'\x1b[0m');
-const param = argsToParam();
-console.log(`args: ${JSON.stringify(param)}`);
-require('./run')(param);
 
-function argsToParam() {
-  return process.argv.slice(2).reduce((obj, str) => {
-    const [key, value] = str.replace('--', '').split('=');
-    obj[key] = value;
-    return obj;
-  }, {} as {[key: string]: string})
+import { program } from "commander";
+const pkgJson = require('../package.json');
+import { run } from './run';
+const param = getOptions();
+run(param);
+
+function getOptions() {
+  program
+    .name('instant_http ')
+    .version(pkgJson.version)
+    .allowUnknownOption()
+    .usage('[global options]')
+    .requiredOption(
+      '-f --file [file]',
+      'file'
+    )
+    .option('-d --dir [dir]', 'Dir to serve', process.cwd())
+    .option(
+      '-n --name [name]',
+      'file name in the zip'
+    )
+    .parse(process.argv);
+  const opts = program.opts() as Parameters<typeof run>[0];
+  console.info(opts);
+  return opts;
 }
-
