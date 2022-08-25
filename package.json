@@ -1,6 +1,6 @@
 {
   "name": "recursive-unzipper",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "main": "index.js",
   "bin": "dist/src/bin.js",
@@ -13,8 +13,8 @@
     "type": "git",
     "url": "git+https://github.com/pillsilly/recursive-unzipper.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "pillsilly",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/pillsilly/recursive-unzipper/issues"
   },
