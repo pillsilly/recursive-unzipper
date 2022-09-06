@@ -28,7 +28,7 @@ export class ZipExplorer {
     this.extractToDefault = this.extractToDefault.bind(this);
     this.zipPath = zipPath;
 
-    if(!fs.existsSync(dest)) {
+    if(dest && !fs.existsSync(dest)) {
       fs.mkdirSync(dest, {recursive:true});
     }
   }
@@ -83,17 +83,18 @@ export class ZipExplorer {
   }
 
   async prepareFile(directory: unZipper.CentralDirectory, sum: FileHandlerType[], zipPath: string) {
+    const baseFolder = this.dest ? this.dest : zipPath;
     const newFiles = directory.files.map(file => {
       let newFile = Object.assign(file, {
-        parentPath: this.dest ?? zipPath,
+        parentPath: baseFolder,
         isZip: isZip(file),
         isXZ: isXZ(file),
         extractToDefault: undefined as any,
       });
       return Object.assign(newFile, {
-        extractToDefault: this.extractToDefault(newFile)
-      })
-    })
+        extractToDefault: this.extractToDefault(newFile),
+      });
+    });
     sum.push(...newFiles);
     const zipFiles = newFiles.filter(isZip);
 
