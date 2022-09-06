@@ -21,12 +21,16 @@ export type FileHandlerType = {
 
 export class ZipExplorer {
 
-  constructor(private readonly zipPath: string) {
+  constructor(private readonly zipPath: string, private dest: string = '') {
     this.prepareFile = this.prepareFile.bind(this);
     this.openZip = this.openZip.bind(this);
     this.extractLZMACompressedFile = this.extractLZMACompressedFile.bind(this);
     this.extractToDefault = this.extractToDefault.bind(this);
     this.zipPath = zipPath;
+
+    if(!fs.existsSync(dest)) {
+      fs.mkdirSync(dest, {recursive:true});
+    }
   }
 
   allFiles: FileHandlerType[] | null = null;
@@ -81,7 +85,7 @@ export class ZipExplorer {
   async prepareFile(directory: unZipper.CentralDirectory, sum: FileHandlerType[], zipPath: string) {
     const newFiles = directory.files.map(file => {
       let newFile = Object.assign(file, {
-        parentPath: zipPath,
+        parentPath: this.dest ?? zipPath,
         isZip: isZip(file),
         isXZ: isXZ(file),
         extractToDefault: undefined as any,
