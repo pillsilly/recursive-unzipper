@@ -36,6 +36,21 @@ describe('run.ts', () => {
     expect(string).toEqual(expectedResult);
   });
 
+  test('should extract to pointed dir', async () => {
+    const expectedResult = `abc
+├── some-file-A.txt
+└── some_dir
+    └── some_file-B.txt`
+
+    const anAbsolutePath = path.resolve('./test/resource/tmp/abc');
+    extractDirs.push(anAbsolutePath); // clear path after case execution
+
+    await run({file: zipFilePath, dest : anAbsolutePath})
+
+    const string = tree(anAbsolutePath, treeOptions);
+    expect(string).toEqual(expectedResult);
+  })
+
   test('should recursively extract all zip and xz files for .zip', async () => {
     const expectedResult = `sample_zip_contains_xz_zip
 └── sample_zip_contains_xz

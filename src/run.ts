@@ -1,12 +1,12 @@
 import {FileHandlerType, ZipExplorer} from "./ZipExplorer";
 const BluebirdPromise  = require("bluebird");
-async function run({file = '', dir = '', name = ''}) {
-  const explorer = new ZipExplorer(file);
+async function run({file = '', dir = '', name = '', dest = ''}) {
+  const explorer = new ZipExplorer(file, dest);
   console.info(`Extracting  ${file} with option dir=${dir} name=${name}`);
 
   let files = await explorer.getAllFiles();
   files = filterByDirAndName({files, dir, name})
-  return BluebirdPromise 
+  return BluebirdPromise
     .each(
       files,
       (file: FileHandlerType) => file.extractToDefault()

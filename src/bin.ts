@@ -3,6 +3,7 @@
 import { program } from "commander";
 import pkgJson from '../package.json';
 import { run } from './run';
+
 run(getOptions());
 
 function getOptions() {
@@ -16,6 +17,7 @@ function getOptions() {
       'Path of the file to be extract'
     )
     .option('-d --dir [dir]', 'The dir name to filter with')
+    .option('-ds --dest [destination directory]', 'The destination dir path')
     .option(
       '-n --name [name]',
       'The file name to filter with'
