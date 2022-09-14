@@ -1,117 +1,63 @@
-import path from "path";
-import {ZipExplorer} from '../src/ZipExplorer';
-import {run} from "../src/run";
-import fs from "fs";
+import path from 'path';
+import {run} from '../src/run';
+import fs from 'fs';
+
 const tree = require('tree-node-cli');
 
 const treeOptions = {sizes: false};
-describe('run.ts', () => {
-  const zipFilePath = getPath('./test/resource/sample_normal_nest_structure.zip');
-  const zipDestPath = getPath('./test/resource/sample_normal_nest_structure_zip');
 
-  const zipXzFilePath = getPath('./test/resource/sample_zip_contains_xz.zip');
-  const zipXzDestPath = getPath('./test/resource/sample_zip_contains_xz_zip');
-
-  const extractDirs = [zipDestPath, zipXzDestPath];
-
-  let explorer !: ZipExplorer;
-  beforeEach(() => {
-  });
-
-  afterEach(() => {
-    extractDirs.forEach(extractedDir => fs.rm(extractedDir, {recursive: true, force: true}, () => {}))
-
-    // @ts-ignore
-    explorer = null;
-  })
-
-  test('should recursively extract all zip files for .zip', async () => {
-    const expectedResult = `sample_normal_nest_structure_zip
+const testFileAndResult = {
+  'sample_normal_nest_structure.tar': `sample_normal_nest_structure.tar.extracted
+├── some-file.txt
+└── some_dir
+    └── some_file.txt`,
+  'sample_normal_nest_structure.tar.xz': `sample_normal_nest_structure.tar.xz.extracted
+└── sample_normal_nest_structure.tar.extracted
+    ├── some-file.txt
+    └── some_dir
+        └── some_file.txt`,
+  'sample_normal_nest_structure.tar.zip': `sample_normal_nest_structure.tar.zip.extracted
+├── sample_normal_nest_structure.tar.extracted
+│   ├── some-file.txt
+│   └── some_dir
+│       └── some_file.txt
+└── some-file-A.txt`,
+  'sample_normal_nest_structure.zip': `sample_normal_nest_structure.zip.extracted
 ├── some-file-A.txt
 └── some_dir
-    └── some_file-B.txt`
-
-    await run({file: zipFilePath})
-    const string = tree(zipDestPath, treeOptions);
-    expect(string).toEqual(expectedResult);
-  });
-
-  test('should extract to pointed dir', async () => {
-    const expectedResult = `abc
-├── some-file-A.txt
-└── some_dir
-    └── some_file-B.txt`
-
-    const anAbsolutePath = path.resolve('./test/resource/tmp/abc');
-    extractDirs.push(anAbsolutePath); // clear path after case execution
-
-    await run({file: zipFilePath, dest : anAbsolutePath})
-
-    const string = tree(anAbsolutePath, treeOptions);
-    expect(string).toEqual(expectedResult);
-  })
-
-  test('should recursively extract all zip and xz files for .zip', async () => {
-    const expectedResult = `sample_zip_contains_xz_zip
+    └── some_file-B.txt`,
+  'sample_zip_contains_xz.zip': `sample_zip_contains_xz.zip.extracted
 └── sample_zip_contains_xz
+    ├── a-text_in_xz.log.xz.extracted
+    │   └── a-text_in_xz.log
     ├── some-file-A.txt
-    ├── some_dir
-    │   ├── some_file-B.txt
-    │   └── text_in_xz.log
-    └── text_in_xz.log`
+    └── some_dir
+        ├── b-text_in_xz.log.xz.extracted
+        │   └── b-text_in_xz.log
+        └── some_file-B.txt`,
+  'text_in_xz.log.xz': `text_in_xz.log.xz.extracted
+└── text_in_xz.log`,
+};
 
-    await run({file: zipXzFilePath})
-    const string = tree(zipXzDestPath, treeOptions);
-    expect(string).toEqual(expectedResult);
+describe('run.ts', function () {
+  afterAll(() => {
+    Object.entries(testFileAndResult).forEach(([file]) => fs.rm(getExtractedPath(file), {recursive: true, force: true}, () => {}));
   });
-
-
-  describe('#Browsing', function () {
-    test('should filter by name regex', async () => {
-      explorer = new ZipExplorer(getPath('test/resource/sample_normal_nest_structure.zip'));
-      const name = /\.txt/;
-
-      let filtered = await explorer.getFiles({name});
-
-      const fileList = filtered.map((file: { parentPath: any; path: any; }) => file.path);
-
-      expect(fileList).toEqual
-      ([
-        "some-file-A.txt",
-        "some_dir/some_file-B.txt"
-      ]);
-    });
-
-    test('should filter by dir regex', async () => {
-      explorer = new ZipExplorer(getPath('test/resource/sample_normal_nest_structure.zip'));
-
-      let filtered = await explorer.getFiles({dir: /some_/});
-
-      const fileList = filtered.map((file: { parentPath: any; path: any; }) => file.path);
-
-      expect(fileList).toEqual
-      ([
-        "some_dir/",
-        "some_dir/some_file-B.txt"
-      ]);
-    });
-
-    test('should filter by dir & name regex', async () => {
-      explorer = new ZipExplorer(getPath('test/resource/sample_normal_nest_structure.zip'));
-
-      let filtered = await explorer.getFiles({dir: /some_/, name: /\.txt/});
-
-      const fileList = filtered.map((file: { parentPath: any; path: any; }) => file.path);
-
-      expect(fileList).toEqual
-      ([
-        "some_dir/some_file-B.txt"
-      ]);
+  Object.entries(testFileAndResult).forEach(([file, expectation]) => {
+    it('should observe expected tree after extracted file ' + file, async function () {
+      const filePath = getFilePath(file);
+      const extractedPath = getExtractedPath(file);
+      await run({file: filePath, dest: extractedPath});
+      const fileTree = tree(extractedPath, treeOptions);
+      expect(fileTree).toEqual(expectation);
     });
   });
-
 });
 
-function getPath(relativePath: string) {
-  return path.resolve(relativePath)
+function getExtractedPath(fileName: string) {
+  return path.resolve(`./test/resource/tmp/${fileName}.extracted`);
+}
+
+function getFilePath(fileName: string) {
+  return path.resolve(`./test/resource/${fileName}`);
 }
