@@ -1,8 +1,6 @@
-
 # recursive-unzipper
 
 Unzip things recursively
-
 
 ## Installation
 
@@ -15,22 +13,19 @@ npm i recursive-unzipper -g
 
 ```
 $ recursive-unzipper -h
-Usage: recursive-unzipper  [global options]
+Usage: recursive-unzipper [global options]
 
 Options:
-  -V, --version     output the version number
-  -f --file [file]  Path of the file to be extract
-  -d --dir [dir]    The dir name to search under
-  -n --name [name]  The file name to search with
-  -h, --help        display help for command
+  -V, --version                       output the version number
+  -f --file [file]                    Path of the files to be extract
+  -ds --dest [destination directory]  The destination directory where file will be extracted; if not specified, a same     
+                                      name directory will be created aside of the zip file as the "destination directory"  
+  -h, --help                          display help for command
 ```
 
 About supported formats
 - `--file `  Currenlty accpets .zip format
 - The zip file could include both `.zip` and `.xz`
-
-
-
 
 ## Running Tests
 
