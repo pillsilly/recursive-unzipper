@@ -12,7 +12,7 @@ function getOptions() {
     .version(pkgJson.version)
     .allowUnknownOption()
     .usage('[global options]')
-    .requiredOption('-f --file [file]', 'Path of the files to be extract')
+    .requiredOption('-f --file [file]', 'Path of the file to be extract')
     // .option('-d --dir [dir]', 'A directory name to filter with')
     .option(
       '-ds --dest [destination directory]',
