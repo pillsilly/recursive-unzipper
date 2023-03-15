@@ -1,8 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import lzma from 'lzma-native';
-import unZipper from 'unzipper';
-import {Readable} from 'stream';
 import tar from 'tar';
 import pino from 'pino';
 
@@ -17,6 +15,7 @@ export const logger = pino({
     },
   },
 });
+const extract = require('extract-zip');
 
 const read = require('fs-readdir-recursive');
 
@@ -33,9 +32,12 @@ export class Extractor {
   private readonly outPutPath: string;
   private readonly fileName: string;
 
-  constructor(private filePath: string, private dest?: string) {
+  constructor(private filePath: string, private dest?: string, private bail: boolean = false) {
     const chopped = filePath.split(path.sep);
-    this.fileName = chopped.pop() as string;
+    const tmpFileName = chopped.pop();
+    if (!tmpFileName) throw Error(`Illegal filename ${filePath}`);
+    this.fileName = tmpFileName;
+
     this.basePath = chopped.slice(0, chopped.length - 1).join(path.sep);
     if (dest) {
       this.outPutPath = path.resolve(dest);
@@ -49,7 +51,7 @@ export class Extractor {
     if (isZip(this.filePath)) {
       await this.extractZip();
     } else if (isTar(this.filePath)) {
-      await this.extractTar();
+      this.extractTar();
     } else if (isXZ(this.filePath)) {
       await this.extractXz();
     }
@@ -57,34 +59,29 @@ export class Extractor {
     await this.loopFiles(this.outPutPath);
   }
 
-  private async extractTar() {
+  private extractTar() {
     logger.info(`Extracting tar [${this.filePath}]`);
-    const buffer = fs.readFileSync(this.filePath);
-
-    await new Promise((resolve) => {
-      const readable = new Readable();
-      readable._read = () => {}; // _read is required but you can noop it
-      readable.push(buffer);
-      readable.push(null);
-      readable
-        .pipe(
-          tar.x({
-            strip: 1,
-            C: this.outPutPath, // alias for cwd:'some-dir', also ok
-          })
-        )
-        .on('finish', resolve);
-    });
+    try {
+      tar.x({
+        file: this.filePath,
+        strip: 1,
+        sync: true,
+        C: this.outPutPath, // alias for cwd:'some-dir', also ok
+      });
+    } catch (err: any) {
+      logger.error(getFailedToExtractMessage(this.filePath), err);
+      if (this.bail) throw new Error(getFailedToExtractMessage(this.filePath));
+    }
   }
 
   private async extractXz() {
     logger.info(`Extracting xz [${this.filePath}]`);
     const buffer = fs.readFileSync(this.filePath);
-
-    return new Promise<void>((resolve) => {
-      const binaryPath =
-        this.outPutPath + '/' + unwrapXzExtension(this.fileName);
+    return new Promise<void>((resolve, reject) => {
+      const binaryPath = this.outPutPath + '/' + unwrapXzExtension(this.fileName);
       lzma.decompress(buffer, {synchronous: true}, (decompressedResult) => {
+        if (!decompressedResult) return this.handleExtractionError(resolve, reject, getFailedToExtractMessage(this.filePath));
+
         fs.writeFileSync(binaryPath, decompressedResult);
         resolve();
       });
@@ -95,13 +92,19 @@ export class Extractor {
     }
   }
 
+  handleExtractionError(resolve: (value: PromiseLike<void> | void) => void, reject: (reason?: any) => void, errorMsg: string) {
+    logger.error(errorMsg);
+    this.bail ? reject(new Error(errorMsg)) : resolve();
+  }
+
   private async extractZip() {
     logger.info(`Extracting zip [${this.filePath}]`);
-    await new Promise((resolve) => {
-      fs.createReadStream(this.filePath)
-        .pipe(unZipper.Extract({path: this.outPutPath}))
-        .on('close', resolve);
-    });
+    try {
+      await extract(this.filePath, {dir: this.outPutPath});
+    } catch (err) {
+      logger.error(getFailedToExtractMessage(this.filePath), err);
+      if (this.bail) throw new Error(getFailedToExtractMessage(this.filePath));
+    }
   }
 
   private async loopFiles(outputPath: string) {
@@ -111,9 +114,10 @@ export class Extractor {
       const absoluteFilePath = path.resolve(outputPath, file);
 
       if (isZip(file) || isTar(file) || isXZ(file)) {
-        const newExtractor = new Extractor(absoluteFilePath);
-        await newExtractor.extract();
-        fs.rmSync(absoluteFilePath);
+        const newExtractor = new Extractor(absoluteFilePath, undefined, this.bail);
+        await newExtractor.extract().finally(() => {
+          fs.rmSync(absoluteFilePath, {force: true, retryDelay: 10000, maxRetries: 3});
+        });
       }
     }
   }
@@ -143,4 +147,8 @@ function isXZ(fileNameOrPath: string) {
 
 function isFileType(fileNameOrPath: string, fileType: string) {
   return !!fileNameOrPath && fileNameOrPath.toLowerCase().endsWith(fileType);
+}
+
+function getFailedToExtractMessage(message: string) {
+  return `Failed to extract:${message}`;
 }

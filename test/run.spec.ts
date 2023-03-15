@@ -1,6 +1,7 @@
 import path from 'path';
 import {run} from '../src/run';
 import fs from 'fs';
+import {logger} from '../src/Extractor';
 
 const tree = require('tree-node-cli');
 
@@ -39,10 +40,56 @@ const testFileAndResult = {
 └── text_in_xz.log`,
 };
 
+const bailTestResults = {
+  'sample_zip_contains_corrupt_xz.zip': `sample_zip_contains_corrupt_xz.zip.extracted
+└── sample_zip_contains_corrupt_xz
+    ├── a-text_in_xz.log.xz.extracted
+    │   └── a-text_in_xz.log
+    ├── some-file-A.txt
+    └── some_dir
+        ├── b-text_in_xz.log.xz.extracted
+        └── some_file-B.txt`,
+  'sample_zip_contains_corrupt_tar.zip': `sample_zip_contains_corrupt_tar.zip.extracted
+└── sample_zip_contains_corrupt_tar
+    ├── corrupted.tar.extracted
+    └── some_dir
+        └── some_file-B.txt`,
+  'sample_zip_contains_corrupt_zip.zip': `sample_zip_contains_corrupt_zip.zip.extracted
+└── sample_zip_contains_corrupt_zip
+    └── some_dir
+        ├── corrupted.zip.extracted
+        └── some_file-B.txt`,
+};
+
+const bailWiseTestResults = {
+  'sample_zip_contains_corrupt_xz.zip': `sample_zip_contains_corrupt_xz.zip.extracted
+└── sample_zip_contains_corrupt_xz
+    ├── a-text_in_xz.log.xz.extracted
+    │   └── a-text_in_xz.log
+    ├── some-file-A.txt
+    └── some_dir
+        ├── b-text_in_xz.log.xz.extracted
+        └── some_file-B.txt`,
+  'sample_zip_contains_corrupt_tar.zip': `sample_zip_contains_corrupt_tar.zip.extracted
+└── sample_zip_contains_corrupt_tar
+    ├── corrupted.tar.extracted
+    └── some_dir
+        └── some_file-B.txt`,
+  'sample_zip_contains_corrupt_zip.zip': `sample_zip_contains_corrupt_zip.zip.extracted
+└── sample_zip_contains_corrupt_zip
+    └── some_dir
+        ├── corrupted.zip.extracted
+        └── some_file-B.txt`,
+};
+
 describe('run.ts', function () {
+  logger.level = 'debug';
+
   afterAll(() => {
     Object.entries(testFileAndResult).forEach(([file]) => fs.rm(getExtractedPath(file), {recursive: true, force: true}, () => {}));
+    Object.entries(bailTestResults).forEach(([file]) => fs.rm(getExtractedPath(file), {recursive: true, force: true}, () => {}));
   });
+
   Object.entries(testFileAndResult).forEach(([file, expectation]) => {
     it('should observe expected tree after extracted file ' + file, async function () {
       const filePath = getFilePath(file);
@@ -51,6 +98,32 @@ describe('run.ts', function () {
       const fileTree = tree(extractedPath, treeOptions);
       expect(fileTree).toEqual(expectation);
     });
+  });
+
+  Object.entries(bailTestResults).forEach(([file, expectation]) => {
+    it(
+      'should observe expected tree after extracted corrupted file ' + file,
+      async function () {
+        const filePath = getFilePath(file);
+        const extractedPath = getExtractedPath(file);
+        await run({file: filePath, dest: extractedPath});
+        const fileTree = tree(extractedPath, treeOptions);
+        expect(fileTree).toEqual(expectation);
+      },
+      10000
+    );
+  });
+
+  Object.entries(bailWiseTestResults).forEach(([file, expectation]) => {
+    it(
+      'should observe expected tree after extracted(bail==true) corrupted file ' + file,
+      async function () {
+        const filePath = getFilePath(file);
+        const extractedPath = getExtractedPath(file);
+        return expect(run({file: filePath, dest: extractedPath, bail: true})).rejects.toMatchObject({message: expect.stringMatching('Failed to extract:')});
+      },
+      10000
+    );
   });
 });
 
