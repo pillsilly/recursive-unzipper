@@ -82,6 +82,15 @@ const bailWiseTestResults = {
         └── some_file-B.txt`,
 };
 
+const entryFileTestResults = {
+  'sample_normal_nest_structure.tar': `sample_normal_nest_structure.tar.extracted
+├── some-file.txt
+└── some_dir
+    └── some_file.txt`,
+  'text_in_xz.log.xz': `text_in_xz.log.xz.extracted
+└── text_in_xz.log`,
+};
+
 describe('run.ts', function () {
   logger.level = 'debug';
 
@@ -121,6 +130,20 @@ describe('run.ts', function () {
         const filePath = getFilePath(file);
         const extractedPath = getExtractedPath(file);
         return expect(run({file: filePath, dest: extractedPath, bail: true})).rejects.toMatchObject({message: expect.stringMatching('Failed to extract:')});
+      },
+      10000
+    );
+  });
+
+  Object.entries(entryFileTestResults).forEach(([file, expectation]) => {
+    it(
+      'should support extract from entry file' + file,
+      async function () {
+        const filePath = getFilePath(file);
+        const extractedPath = getExtractedPath(file);
+        await run({file: filePath, dest: extractedPath});
+        const fileTree = tree(extractedPath, treeOptions);
+        expect(fileTree).toEqual(expectation);
       },
       10000
     );

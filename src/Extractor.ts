@@ -88,7 +88,7 @@ export class Extractor {
     });
 
     function unwrapXzExtension(fileName: string) {
-      return fileName.toLowerCase().replace('.xz', '');
+      return fileName.toLowerCase().replace('.xz', '').split('/').pop();
     }
   }
 
