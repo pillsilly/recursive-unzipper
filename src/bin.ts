@@ -18,9 +18,7 @@ function getOptions() {
       '-ds --dest [destination directory]',
       'The destination directory where file will be extracted; if not specified, a same name directory will be created aside of the zip file as the "destination directory"'
     )
-    // .option(
-    //   '-n --name [name]', 'A file name to filter with'
-    // )
+    .option('-bail --bail [bail]', "If true then it won't continue when error is captured", false)
     .parse(process.argv);
   const opts = program.opts() as Parameters<typeof run>[0];
   console.info(opts);

@@ -16,23 +16,21 @@ npm i recursive-unzipper -g
 
 ```
 $ recursive-unzipper -h
-Usage: recursive-unzipper [global options]
+Usage: recursive-unzipper  [global options]
 
 Options:
   -V, --version                       output the version number
   -f --file [file]                    Path of the file to be extract
-  -ds --dest [destination directory]  The destination directory where file will be extracted; if not specified, a same     
-                                      name directory will be created aside of the zip file as the "destination directory"  
+  -ds --dest [destination directory]  The destination directory where file will be extracted; if not specified, a same name directory will be created aside of the zip file as the "destination directory"
+  -bail --bail [bail]                 If true then it won't continue when error is captured (default: false)
   -h, --help                          display help for command
 ```
 
-Supported formats
+## Supported formats
 
-`.zip` , `.xz`, `.tar`
+`.zip` , `.xz`, `.tar` as the **input file** and **as the file included by** the input file
 
-## Running Tests
-
-To run tests, run the following command
+## Run Tests
 
 ```bash
   npm run test
