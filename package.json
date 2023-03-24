@@ -7,7 +7,7 @@
   "scripts": {
     "test": "npx jest --debug",
     "compile": "tsc",
-    "release": "npx release-it"
+    "release": "npm run compile && npx release-it"
   },
   "repository": {
     "type": "git",
@@ -28,6 +28,7 @@
     "lzma-native": "8.0.6",
     "pino": "8.11.0",
     "pino-pretty": "9.4.0",
+    "rimraf": "^5.0.0",
     "tar": "^6.1.13"
   },
   "devDependencies": {
@@ -43,9 +44,16 @@
     "jest": "29",
     "prettier": "^2.8.4",
     "release-it": "15.9.0",
+    "stream-to-promise": "^3.0.0",
     "tree-node-cli": "^1.6.0",
     "ts-node": "10.9.1",
     "typescript": "^4.9.5"
+  },
+  "hooks": {
+    "before:init": [
+      "npm test"
+    ],
+    "after:bump": "npm run build"
   },
   "prettier": {
     "printWidth": 180,

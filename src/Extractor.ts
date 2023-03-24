@@ -3,6 +3,7 @@ import path from 'path';
 import lzma from 'lzma-native';
 import tar from 'tar';
 import pino from 'pino';
+const {rimraf} = require('rimraf');
 
 export const logger = pino({
   name: 'recursive-unzipper',
@@ -76,25 +77,32 @@ export class Extractor {
 
   private async extractXz() {
     logger.info(`Extracting xz [${this.filePath}]`);
-    const buffer = fs.readFileSync(this.filePath);
     return new Promise<void>((resolve, reject) => {
       const binaryPath = this.outPutPath + '/' + unwrapXzExtension(this.fileName);
-      lzma.decompress(buffer, {synchronous: true}, (decompressedResult) => {
-        if (!decompressedResult) return this.handleExtractionError(resolve, reject, getFailedToExtractMessage(this.filePath));
-
-        fs.writeFileSync(binaryPath, decompressedResult);
-        resolve();
+      const output = fs
+        .createWriteStream(binaryPath)
+        .on('close', resolve) // if transform stream and input stream don't go wrong, then it's always OK to resolve when ouput stream is closed.
+        .on('error', (e) => {
+          logger.error(`writing lzma data to disk gone wrong: ${e.stack}`);
+          if (this.bail) {
+            reject(new Error(getFailedToExtractMessage(this.filePath)));
+          } else {
+            resolve(); // if it's not bail, then resolve when the writer stream goes wrong: e.g disk is full.
+          }
+        });
+      const input = fs.createReadStream(this.filePath);
+      const transform = lzma.createDecompressor({threads: 1, synchronous: true}).on('error', (e) => {
+        logger.error(`lzma Decompressor error ${e.stack}`);
+        if (this.bail) {
+          reject(new Error(getFailedToExtractMessage(this.filePath)));
+        } // if it's not bail, then leave the resolve timing to the writer stream: line 87
       });
+      input.pipe(transform).pipe(output);
     });
 
     function unwrapXzExtension(fileName: string) {
       return fileName.toLowerCase().replace('.xz', '').split('/').pop();
     }
-  }
-
-  handleExtractionError(resolve: (value: PromiseLike<void> | void) => void, reject: (reason?: any) => void, errorMsg: string) {
-    logger.error(errorMsg);
-    this.bail ? reject(new Error(errorMsg)) : resolve();
   }
 
   private async extractZip() {
@@ -115,9 +123,8 @@ export class Extractor {
 
       if (isZip(file) || isTar(file) || isXZ(file)) {
         const newExtractor = new Extractor(absoluteFilePath, undefined, this.bail);
-        await newExtractor.extract().finally(() => {
-          fs.rmSync(absoluteFilePath, {force: true, retryDelay: 10000, maxRetries: 3});
-        });
+        await newExtractor.extract();
+        rimraf.moveRemove.sync(absoluteFilePath);
       }
     }
   }
