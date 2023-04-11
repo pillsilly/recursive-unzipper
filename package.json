@@ -1,6 +1,6 @@
 {
   "name": "recursive-unzipper",
-  "version": "0.2.1-1",
+  "version": "0.2.1",
   "description": "",
   "main": "index.js",
   "bin": "dist/src/bin.js",
