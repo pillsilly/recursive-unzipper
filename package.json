@@ -6,8 +6,9 @@
   "bin": "dist/src/bin.js",
   "scripts": {
     "test": "npx jest --debug",
-    "compile": "tsc",
-    "release": "npm run compile && npx release-it"
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "release": "npx release-it"
   },
   "repository": {
     "type": "git",
@@ -51,9 +52,10 @@
   },
   "hooks": {
     "before:init": [
+      "npm run lint",
       "npm test"
     ],
-    "after:bump": "npm run build"
+    "before:release": "npm run build"
   },
   "prettier": {
     "printWidth": 180,
