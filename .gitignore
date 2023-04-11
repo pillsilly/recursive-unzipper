@@ -9,3 +9,4 @@ dist/
 /test/resource/tmp/
 /test/resource/run_zip
 
+**/**/qt-every*
