@@ -3,7 +3,7 @@ bash.exe.stackdump
 snapshot*
 .idea
 dist/
-
+package-lock.json
 /.vscode/
 /coverage/
 /test/resource/tmp/
