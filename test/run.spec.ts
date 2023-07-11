@@ -196,6 +196,27 @@ describe('run.ts', function () {
       expect(fileTree).toEqual(expectation);
     });
   });
+
+  Object.entries({
+    'sample_zip_contains_jar.zip': `sample_zip_contains_jar.zip.extracted
+├── a-text_in_xz.log.xz.extracted
+│   └── a-text_in_xz.log
+├── some-file-A.jar.extracted
+│   └── some-file-A.txt
+└── some_dir
+    ├── b-text_in_xz.log.xz.extracted
+    │   └── b-text_in_xz.log
+    └── some_file-B.txt`,
+  }).forEach(([file, expectation]) => {
+    it('should extract jar when jar is appointed as zip', async function () {
+      testFileNames.push(file);
+      const filePath = getFilePath(file);
+      const extractedPath = getExtractedPath(file);
+      await run({file: filePath, dest: extractedPath, map: 'jar|zip'});
+      const fileTree = tree(extractedPath, treeOptions);
+      expect(fileTree).toEqual(expectation);
+    });
+  });
 });
 
 function getExtractedPath(fileName: string) {
