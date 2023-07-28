@@ -3,6 +3,7 @@ import path from 'path';
 import lzma from 'lzma-native';
 import tar from 'tar';
 import pino from 'pino';
+
 const {rimraf} = require('rimraf');
 
 export const logger = pino({
@@ -26,14 +27,22 @@ const SUFFIX = {
   TAR: '.tar',
 };
 
-const EXTRACTED_DIR_SUFFIX = `.extracted`;
+const defaultExtMapping: extMappingType = {
+  zip: [SUFFIX.ZIP],
+  tar: [SUFFIX.TAR],
+  xz: [SUFFIX.XZ],
+};
 
+const EXTRACTED_DIR_SUFFIX = `.extracted`;
+type extMappingType = {
+  [key in 'zip' | 'tar' | 'xz']: string[];
+};
 export class Extractor {
   private readonly basePath: string;
   private readonly outPutPath: string;
   private readonly fileName: string;
 
-  constructor(private filePath: string, private dest?: string, private bail: boolean = false) {
+  constructor(private filePath: string, private dest?: string, private bail: boolean = false, private readonly extMapping: extMappingType = defaultExtMapping) {
     const chopped = filePath.split(path.sep);
     const tmpFileName = chopped.pop();
     if (!tmpFileName) throw Error(`Illegal filename ${filePath}`);
@@ -49,11 +58,11 @@ export class Extractor {
 
   public async extract() {
     createDirIfNotExist(this.outPutPath);
-    if (isZip(this.filePath)) {
+    if (this.isZip(this.filePath)) {
       await this.extractZip();
-    } else if (isTar(this.filePath)) {
+    } else if (this.isTar(this.filePath)) {
       this.extractTar();
-    } else if (isXZ(this.filePath)) {
+    } else if (this.isXZ(this.filePath)) {
       await this.extractXz();
     }
 
@@ -121,12 +130,42 @@ export class Extractor {
     for await (const file of filePathArray) {
       const absoluteFilePath = path.resolve(outputPath, file);
 
-      if (isZip(file) || isTar(file) || isXZ(file)) {
-        const newExtractor = new Extractor(absoluteFilePath, undefined, this.bail);
+      if (this.isZip(file) || this.isTar(file) || this.isXZ(file)) {
+        const newExtractor = new Extractor(absoluteFilePath, undefined, this.bail, this.extMapping);
         await newExtractor.extract();
         rimraf.moveRemove.sync(absoluteFilePath);
       }
     }
+  }
+
+  private isTar(fileNameOrPath: string) {
+    return this.extMapping.tar.some((suffix) => isFileType(fileNameOrPath, suffix));
+  }
+
+  private isZip(fileNameOrPath: string) {
+    return this.extMapping.zip.some((suffix) => isFileType(fileNameOrPath, suffix));
+  }
+
+  private isXZ(fileNameOrPath: string) {
+    return this.extMapping.xz.some((suffix) => isFileType(fileNameOrPath, suffix));
+  }
+
+  public static appendExtMapping(map: string | undefined) {
+    if (!map) return defaultExtMapping;
+
+    const items = map.split(',');
+
+    const extMapping = {...defaultExtMapping};
+    for (const item of items) {
+      const [extToMap, fileType] = item.split('|') as [string, keyof extMappingType];
+      if (!extToMap || !fileType || !Object.values(SUFFIX).includes(`.${fileType}`)) {
+        throw new Error(`Illegal mapping expression: ${item} `);
+      }
+
+      extMapping[fileType].push(`.${extToMap}`);
+    }
+
+    return extMapping;
   }
 }
 
@@ -138,18 +177,6 @@ function createDirIfNotExist(toCreateDir: string) {
   }
 
   return toCreateDir;
-}
-
-function isTar(fileNameOrPath: string) {
-  return isFileType(fileNameOrPath, SUFFIX.TAR);
-}
-
-function isZip(fileNameOrPath: string) {
-  return isFileType(fileNameOrPath, SUFFIX.ZIP);
-}
-
-function isXZ(fileNameOrPath: string) {
-  return isFileType(fileNameOrPath, SUFFIX.XZ);
 }
 
 function isFileType(fileNameOrPath: string, fileType: string) {
