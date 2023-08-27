@@ -2,8 +2,9 @@ import path from 'path';
 import {run} from '../src/run';
 import {logger} from '../src/Extractor';
 import {rimraf} from 'rimraf';
+import {getExtractedPath, getFilePath} from './test-util';
 
-const tree = require('tree-node-cli');
+import tree from 'tree-node-cli';
 
 const treeOptions = {sizes: false};
 
@@ -93,13 +94,13 @@ const bailTestFiles2 = {
         └── some_file-B.txt`,
 };
 
-describe('run.ts', function () {
+describe('#run.ts', function () {
   logger.level = 'debug';
 
   let testFileNames: string[] = [];
   afterEach(() => {
     for (const testFileName of testFileNames) {
-      rimraf.moveRemove.sync(getExtractedPath(testFileName));
+      rimraf.rimrafSync(getExtractedPath(testFileName));
     }
     testFileNames = [];
   });
@@ -219,10 +220,3 @@ describe('run.ts', function () {
   });
 });
 
-function getExtractedPath(fileName: string) {
-  return path.resolve(`./test/resource/tmp/${fileName}.extracted`);
-}
-
-function getFilePath(fileName: string) {
-  return path.resolve(`./test/resource/${fileName}`);
-}
