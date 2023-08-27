@@ -133,7 +133,7 @@ export class Extractor {
       if (this.isZip(file) || this.isTar(file) || this.isXZ(file)) {
         const newExtractor = new Extractor(absoluteFilePath, undefined, this.bail, this.extMapping);
         await newExtractor.extract();
-        rimraf.moveRemove.sync(absoluteFilePath);
+        rimraf.rimrafSync(absoluteFilePath);
       }
     }
   }
