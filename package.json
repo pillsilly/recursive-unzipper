@@ -1,14 +1,14 @@
 {
   "name": "recursive-unzipper",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "",
   "main": "index.js",
   "bin": "dist/src/bin.js",
   "scripts": {
     "test": "npx jest --debug",
     "build": "tsc",
-    "run:dev":"ts-node src/bin.ts",
-    "run:build":"node dist//src/bin.js",
+    "run:dev": "ts-node src/bin.ts",
+    "run:build": "node dist//src/bin.js",
     "lint": "tsc --noEmit",
     "release": "npx release-it"
   },
