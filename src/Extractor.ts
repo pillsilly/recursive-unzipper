@@ -4,7 +4,10 @@ import lzma from 'lzma-native';
 import tar from 'tar';
 import pino from 'pino';
 
-const {rimraf} = require('rimraf');
+import {rimraf} from 'rimraf';
+
+
+import extract from 'extract-zip';
 
 export const logger = pino({
   name: 'recursive-unzipper',
@@ -17,9 +20,7 @@ export const logger = pino({
     },
   },
 });
-const extract = require('extract-zip');
-
-const read = require('fs-readdir-recursive');
+// const read = require('fs-readdir-recursive');
 
 const SUFFIX = {
   XZ: '.xz',
@@ -125,15 +126,14 @@ export class Extractor {
   }
 
   private async loopFiles(outputPath: string) {
-    const filePathArray: string[] = read(outputPath);
-
+    const recursive = require("recursive-readdir");
+    const filePathArray: string[] = await recursive(outputPath);
     for await (const file of filePathArray) {
-      const absoluteFilePath = path.resolve(outputPath, file);
 
       if (this.isZip(file) || this.isTar(file) || this.isXZ(file)) {
-        const newExtractor = new Extractor(absoluteFilePath, undefined, this.bail, this.extMapping);
+        const newExtractor = new Extractor(file, undefined, this.bail, this.extMapping);
         await newExtractor.extract();
-        rimraf.rimrafSync(absoluteFilePath);
+        rimraf.rimrafSync(file);
       }
     }
   }

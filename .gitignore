@@ -8,5 +8,6 @@ package-lock.json
 /coverage/
 /test/resource/tmp/
 /test/resource/run_zip
-
+**/*.extracted/
 **/**/qt-every*
+tmp
