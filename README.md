@@ -1,13 +1,13 @@
 # recursive-unzipper
 
-Recursively extract a compressed file which includes different formats (`zip`, `xz`, `tar`) .
+Recursively extract compressed files that include different formats (`zip`, `xz`, `tar`).
 
-e.g, a target `zip` file might have a `tar` file inside, then in the `tar` file there could be a `xz` file;
+e.g., a target `zip` file might contain a `tar` file, which in turn could contain an `xz` file.
 
-## Install
- 
+## Installation
+
 ```bash
-#global Installation
+# Global installation
 npm i recursive-unzipper -g
 ```
     
@@ -18,31 +18,30 @@ $ recursive-unzipper -h
 Usage: recursive-unzipper [global options]
 
 Arguments:
-  file                                The first argument is treated as the Path of target file. (Legacy way is through the option "-f")
+  file                                The first argument is treated as the path of the target file. (Legacy way is through the option "-f")
 
 Options:
-  -V, --version                       output the version number
-  -f --file [file]                    Path of the file to be extract
-  -ds --dest [destination directory]  The destination directory where file will be extracted; if not specified, a same name directory will be
-                                      created aside of the zip file as the "destination directory"
-  -bail --bail [bail]                 If true then it won't continue when error is captured (default: false)
-  -m --map [map]                      If you are certain about specific type of files were compressed by any of the supported algorithm, e.g,
-                                      jar can be extracted by zip algorithm; you can then acknowledge recursive-unzipper by passing this flag:
-                                      e.g --map "jar|zip"
-  -h, --help                          display help for command
-
+  -V, --version                       Output the version number
+  -f --file [file]                    Path of the file to be extracted
+  -ds --dest [destination directory]  The destination directory where the file will be extracted; if not specified, a directory with the same name will be
+                                      created beside the zip file as the "destination directory"
+  -bail --bail [bail]                 If true, the process will stop when an error is encountered (default: false)
+  -m --map [map]                      If you know that specific types of files were compressed using any of the supported algorithms, e.g.,
+                                      jar files can be extracted using the zip algorithm, you can inform recursive-unzipper by passing this flag:
+                                      e.g., --map "jar|zip", which means to treat .jar files as .zip files
+  -h, --help                          Display help for the command
 ```
 
-## Supported formats
+## Supported Formats
 
-`zip` , `xz`, `tar`
+`zip`, `xz`, `tar`
 
---- 
+---
 
-## Run for development (run by ts-node)
+## Run for Development (using ts-node)
 `npm run run:dev`
 
-## module support
+## Module Support
 - mjs
 `import {run} from 'recursive-unzipper'`
 
@@ -50,7 +49,7 @@ Options:
 `const {run} = require('recursive-unzipper')`
 
 ## Build
-` npm run build `
+`npm run build`
 
 ## Lint
 `npm run lint`
@@ -58,7 +57,7 @@ Options:
 ## Run Tests
 
 ```bash
-  npm run test
+npm run test
 ```
 
 ## License

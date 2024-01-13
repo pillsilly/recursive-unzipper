@@ -11,3 +11,4 @@ package-lock.json
 **/*.extracted/
 **/**/qt-every*
 tmp
+tsconfig.tsbuildinfo

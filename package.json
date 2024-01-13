@@ -25,6 +25,7 @@
     ]
   },
   "scripts": {
+    "npx": "npx",
     "testpack": "rm ./tmp/* -rf && npm pack --pack-destination=./tmp",
     "test": "npx jest --debug",
     "lint": "tsc --noEmit",

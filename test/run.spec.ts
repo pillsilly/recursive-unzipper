@@ -1,8 +1,7 @@
-import path from 'path';
-import {run} from '../src/run';
-import {logger} from '../src/Extractor';
-import {rimraf} from 'rimraf';
-import {getExtractedPath, getFilePath} from './test-util';
+import { rimraf } from 'rimraf';
+import { logger } from '../src/Extractor';
+import { getPluginFunctions, run, RunParameters } from '../src/run';
+import { getExtractedPath, getFilePath } from './test-util';
 
 import tree from 'tree-node-cli';
 
@@ -96,6 +95,18 @@ const bailTestFiles2 = {
 
 describe('#run.ts', function () {
   logger.level = 'debug';
+
+  // write UT for getPluginFunctions with jest mock is too complex, so I just leave it here.
+  it('should getPluginFunctions work', async function () {
+    const pluginFunctions = await getPluginFunctions({
+      zip: 'test/resource/testplugin.js',
+      tar:  'test/resource/testplugin.js',
+      xz:  'test/resource/testplugin.js'
+    });
+    expect(await pluginFunctions?.zip?.(5,6)).toEqual(123);
+    expect(await pluginFunctions?.tar?.(5,6)).toEqual(123);
+    expect(await pluginFunctions?.xz?.(5,6)).toEqual(123);
+  });
 
   let testFileNames: string[] = [];
   afterEach(() => {
@@ -218,5 +229,77 @@ describe('#run.ts', function () {
       expect(fileTree).toEqual(expectation);
     });
   });
+
+  // test for extracting files with custom plugin
+
+  it('should extract zip with customized zip decompressor funtion', async function () {
+    // set up the run parameters
+    const runParameters: RunParameters = {
+      file: getFilePath('test/resource/testplugin.js.zip'),
+      dest: getExtractedPath('test/resource/testplugin.js.zip.extracted'),
+      plugin: {
+        extract: {
+          zip: 'test/example-zip.extractor.js', // path to the custom plugin
+        },
+      },
+      bail: false,
+    };
+
+    await run(runParameters)
+  });
+
+  it('should extract tar with customized tar decompressor funtion', async function () {
+    // set up the run parameters
+    const myCustomDecompressorFunction = async (filePath: string) => {};
+    const runParameters: RunParameters = {
+      file: getFilePath('testplugin.js.tar'),
+      dest: getExtractedPath('testplugin.js.tar.extracted'),
+      plugin: {
+        extract: {
+          tar: 'test/example-tar.extractor.js', // path to the custom plugin
+        },
+      },
+      bail: false,
+    };
+
+    await run(runParameters);
+  });
+
+  it('should extract xz with customized xz decompressor funtion', async function () {
+    // set up the run parameters
+    const runParameters: RunParameters = {
+      file: getFilePath('testplugin.js.xz'),
+      dest: getExtractedPath('testplugin.js.xz.extracted'),
+      plugin: {
+        extract: {
+          xz: 'test/example-xz.extractor.js', // path to the custom plugin
+        },
+      },
+      bail: false,
+    };
+
+    await run(runParameters);
+  });
+
+  // test: it should work when all extractors are customized for a file that is nested compressed by tar, zip, xz
+  it('should extract nested compressed file with all customized extractors', async function () {
+    const runParameters: RunParameters = {
+      file: getFilePath('sample_normal_nest_structure.zip'),
+      dest: getExtractedPath('sample_normal_nest_structure.zip'),
+      plugin: {
+        extract: {
+          zip: 'test/example-zip.extractor.js',
+          tar: 'test/example-tar.extractor.js',
+          xz: 'test/example-xz.extractor.js',
+        },
+      },
+      bail: false,
+    };
+
+    await run(runParameters);
+    const fileTree = tree(getExtractedPath('sample_normal_nest_structure.zip'), treeOptions);
+    expect(fileTree).toEqual(testFileAndResult['sample_normal_nest_structure.zip']);
+  });
+
 });
 

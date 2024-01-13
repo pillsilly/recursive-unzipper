@@ -1,13 +1,11 @@
 import fs from 'fs';
-import path from 'path';
+import path, { extname } from 'path';
 import lzma from 'lzma-native';
 import tar from 'tar';
 import pino from 'pino';
 
 import {rimraf} from 'rimraf';
-
-
-import extract from 'extract-zip';
+import * as defaultZipExtractor from 'extract-zip';
 
 export const logger = pino({
   name: 'recursive-unzipper',
@@ -20,7 +18,6 @@ export const logger = pino({
     },
   },
 });
-// const read = require('fs-readdir-recursive');
 
 const SUFFIX = {
   XZ: '.xz',
@@ -38,12 +35,69 @@ const EXTRACTED_DIR_SUFFIX = `.extracted`;
 type extMappingType = {
   [key in 'zip' | 'tar' | 'xz']: string[];
 };
-export class Extractor {
-  private readonly basePath: string;
-  private readonly outPutPath: string;
-  private readonly fileName: string;
 
-  constructor(private filePath: string, private dest?: string, private bail: boolean = false, private readonly extMapping: extMappingType = defaultExtMapping) {
+type pluginType = {
+  extract: {
+    zip: string,
+    tar: string,
+    xz: string
+  }
+}
+
+type ExtractorType = () => Promise<any> | void;
+export type PluginFunctionsType = {
+  zip?: ExtractorType,
+  tar?: ExtractorType,
+  xz?: ExtractorType,
+}
+export class Extractor {
+  private readonly outPutPath: string = '';
+  private readonly fileName: string = '';
+
+  private filePath: string;
+  private dest?: string;
+  private bail: boolean;
+  private extMapping: extMappingType;
+  private pluginFunctions: PluginFunctionsType;
+  private basePath: string = '';
+  private zipExtractor: ExtractorType;
+  private xzExtractor: ExtractorType;
+  private tarExtractor: ExtractorType;
+
+  constructor({
+    filePath,
+    dest,
+    bail,
+    extMapping,
+    pluginFunctions = {},
+  }: {
+    filePath: string;
+    dest?: string;
+    bail: boolean;
+    extMapping: extMappingType;
+    pluginFunctions: PluginFunctionsType | undefined;
+  }) {
+
+    this.filePath = filePath;
+    this.dest = dest;
+    this.bail = bail;
+    this.extMapping = extMapping;
+    this.pluginFunctions = pluginFunctions;
+
+    this.zipExtractor = () => {
+       return (pluginFunctions?.zip || defaultZipExtractor.default).bind(this)(this.filePath, {dir: this.outPutPath});
+    }
+
+    this.xzExtractor = () => {
+      // @ts-ignore
+      return (pluginFunctions?.xz || this.defaultXzExtractor).bind(this)(this.filePath, {dir: this.outPutPath})
+    }
+
+    this.tarExtractor = () => {
+      // @ts-ignore
+      return (pluginFunctions?.tar || this.defaultTarExtractor).bind(this)(this.filePath, {dir: this.outPutPath})
+    }
+
     const chopped = filePath.split(path.sep);
     const tmpFileName = chopped.pop();
     if (!tmpFileName) throw Error(`Illegal filename ${filePath}`);
@@ -58,6 +112,7 @@ export class Extractor {
   }
 
   public async extract() {
+
     createDirIfNotExist(this.outPutPath);
     if (this.isZip(this.filePath)) {
       await this.extractZip();
@@ -70,8 +125,7 @@ export class Extractor {
     await this.loopFiles(this.outPutPath);
   }
 
-  private extractTar() {
-    logger.info(`Extracting tar [${this.filePath}]`);
+  defaultTarExtractor (){
     try {
       tar.x({
         file: this.filePath,
@@ -85,8 +139,13 @@ export class Extractor {
     }
   }
 
-  private async extractXz() {
-    logger.info(`Extracting xz [${this.filePath}]`);
+  private extractTar() {
+    logger.info(`Extracting tar [${this.filePath}]`);
+    return this.tarExtractor();
+  }
+
+
+  defaultXzExtractor() {
     return new Promise<void>((resolve, reject) => {
       const binaryPath = this.outPutPath + '/' + unwrapXzExtension(this.fileName);
       const output = fs
@@ -115,10 +174,17 @@ export class Extractor {
     }
   }
 
+
+  private async extractXz() {
+    logger.info(`Extracting xz [${this.filePath}]`);
+    return this.xzExtractor();
+  }
+
+
   private async extractZip() {
     logger.info(`Extracting zip [${this.filePath}]`);
     try {
-      await extract(this.filePath, {dir: this.outPutPath});
+      await this.zipExtractor();
     } catch (err) {
       logger.error(getFailedToExtractMessage(this.filePath), err);
       if (this.bail) throw new Error(getFailedToExtractMessage(this.filePath));
@@ -126,12 +192,16 @@ export class Extractor {
   }
 
   private async loopFiles(outputPath: string) {
-    const recursive = require("recursive-readdir");
+    const recursive = require('recursive-readdir');
     const filePathArray: string[] = await recursive(outputPath);
     for await (const file of filePathArray) {
-
       if (this.isZip(file) || this.isTar(file) || this.isXZ(file)) {
-        const newExtractor = new Extractor(file, undefined, this.bail, this.extMapping);
+        const newExtractor = new Extractor({
+          filePath: file,
+          bail: this.bail,
+          extMapping: this.extMapping,
+          pluginFunctions: this.pluginFunctions,
+        });
         await newExtractor.extract();
         rimraf.rimrafSync(file);
       }
@@ -143,6 +213,7 @@ export class Extractor {
   }
 
   private isZip(fileNameOrPath: string) {
+    
     return this.extMapping.zip.some((suffix) => isFileType(fileNameOrPath, suffix));
   }
 
@@ -158,11 +229,12 @@ export class Extractor {
     const extMapping = {...defaultExtMapping};
     for (const item of items) {
       const [extToMap, fileType] = item.split('|') as [string, keyof extMappingType];
-      if (!extToMap || !fileType || !Object.values(SUFFIX).includes(`.${fileType}`)) {
+      if (!fileType || !Object.values(SUFFIX).includes(`.${fileType}`)) {
         throw new Error(`Illegal mapping expression: ${item} `);
       }
 
-      extMapping[fileType].push(`.${extToMap}`);
+      const extension = extToMap ? `.${extToMap}` : '';
+      extMapping[fileType].push(extension);
     }
 
     return extMapping;
@@ -180,6 +252,8 @@ function createDirIfNotExist(toCreateDir: string) {
 }
 
 function isFileType(fileNameOrPath: string, fileType: string) {
+  // no extention name, and the matcher is empty extention name
+  if (!fileType && extname(fileNameOrPath).includes('.')) return false;
   return !!fileNameOrPath && fileNameOrPath.toLowerCase().endsWith(fileType);
 }
 
