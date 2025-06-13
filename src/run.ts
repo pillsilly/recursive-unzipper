@@ -15,6 +15,7 @@ export type RunParameters = {
       zip?: string;
       tar?: string;
       xz?: string;
+      rar?: string;
     };
   };
 };
@@ -24,7 +25,8 @@ async function run({file = '', dir = '', name = '', dest = '', bail = false, map
   extract: {
     zip: '',
     tar: '',
-    xz: ''
+    xz: '',
+    rar: ''
   }
 }}: RunParameters) {
   const extMapping = Extractor.appendExtMapping(map);
@@ -42,7 +44,7 @@ async function run({file = '', dir = '', name = '', dest = '', bail = false, map
 export {run, getPluginFunctions};
 
 
-async function getPluginFunctions(locations: {[key in 'zip' | 'tar' | 'xz']: string} | {}) {
+async function getPluginFunctions(locations: {[key in 'zip' | 'tar' | 'xz' | 'rar']: string} | {}) {
   const pluginFunctions: PluginFunctionsType = {}
   for (const key of Object.keys(locations)) {
     // @ts-ignore
@@ -50,19 +52,13 @@ async function getPluginFunctions(locations: {[key in 'zip' | 'tar' | 'xz']: str
     // @ts-ignore
     const pluginLocation = path.resolve(locations[key]);
     if (!fs.existsSync(pluginLocation)) continue;
-    const extractorPluggedIn = require(pluginLocation).default;
-    // create a wrapperfuntion  for defaultFn
-    // this wrapper funtion will take the output (which is arraybuffer decompressed from the compressed binary) of the default funtion
-    // and write it to the dest , the dest is taken from the 2nd parameter of the "extractorPluggedIn"
-
+    const extractorPluggedIn = require(pluginLocation).default || require(pluginLocation);
     if (typeof extractorPluggedIn !== 'function') {
       throw new Error(`Plugin at ${pluginLocation} is not a valid extractor function`);
     }
-    
     const extractorPluggedInWrapperForAutomatedWriteToDisk = async (filePath: string, options: {dir: string}) => {
       return await extractorPluggedIn(filePath, options);
     }
-
     Object.assign(pluginFunctions, {[key]: extractorPluggedInWrapperForAutomatedWriteToDisk});
   }
   return pluginFunctions;

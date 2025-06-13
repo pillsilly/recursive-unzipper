@@ -33,7 +33,7 @@ const defaultExtMapping: extMappingType = {
 
 const EXTRACTED_DIR_SUFFIX = `.extracted`;
 type extMappingType = {
-  [key in 'zip' | 'tar' | 'xz']: string[];
+  [key in 'zip' | 'tar' | 'xz' | string]: string[];
 };
 
 type pluginType = {
@@ -46,9 +46,7 @@ type pluginType = {
 
 type ExtractorType = () => Promise<any> | void;
 export type PluginFunctionsType = {
-  zip?: ExtractorType,
-  tar?: ExtractorType,
-  xz?: ExtractorType,
+  [key: string]: (filePath: string, options: any) => Promise<void>;
 }
 export class Extractor {
   private readonly outPutPath: string = '';
@@ -82,7 +80,12 @@ export class Extractor {
     this.dest = dest;
     this.bail = bail;
     this.extMapping = extMapping;
+   
+    
     this.pluginFunctions = pluginFunctions;
+    for (const key of Object.keys(pluginFunctions)) {
+      this.extMapping[key as keyof extMappingType] = [`.${key}`];
+    }
 
     this.zipExtractor = () => {
        return (pluginFunctions?.zip || defaultZipExtractor.default).bind(this)(this.filePath, {dir: this.outPutPath});
@@ -112,16 +115,37 @@ export class Extractor {
   }
 
   public async extract() {
-
     createDirIfNotExist(this.outPutPath);
-    if (this.isZip(this.filePath)) {
-      await this.extractZip();
-    } else if (this.isTar(this.filePath)) {
-      this.extractTar();
-    } else if (this.isXZ(this.filePath)) {
-      await this.extractXz();
+    let handled = false;
+    for (const type of Object.keys(this.extMapping)) {
+      for (const suffix of this.extMapping[type as keyof extMappingType]) {
+        if (isFileType(this.filePath, suffix)) {
+          // If a plugin is configured for this type, use it
+          if (this.pluginFunctions && typeof this.pluginFunctions[type] === 'function') {
+            await this.pluginFunctions[type](this.filePath, { dir: this.outPutPath });
+            handled = true;
+          } else {
+            // Use built-in extractor
+            if (type === 'zip') {
+              await this.extractZip();
+              handled = true;
+            } else if (type === 'tar') {
+              this.extractTar();
+              handled = true;
+            } else if (type === 'xz') {
+              await this.extractXz();
+              handled = true;
+            }
+          }
+          break;
+        }
+      }
+      if (handled) break;
     }
-
+    if (!handled) {
+      logger.error(`No extractor found or no files decompressed for: ${this.filePath}`);
+      throw new Error(`Failed to extract:${this.filePath} (no files decompressed)`);
+    }
     await this.loopFiles(this.outPutPath);
   }
 

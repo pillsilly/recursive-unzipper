@@ -235,8 +235,8 @@ describe('#run.ts', function () {
   it('should extract zip with customized zip decompressor funtion', async function () {
     // set up the run parameters
     const runParameters: RunParameters = {
-      file: getFilePath('test/resource/testplugin.js.zip'),
-      dest: getExtractedPath('test/resource/testplugin.js.zip.extracted'),
+      file: getFilePath('testplugin.js.zip'),
+      dest: getExtractedPath('testplugin.js.zip.extracted'),
       plugin: {
         extract: {
           zip: 'test/example-zip.extractor.js', // path to the custom plugin
@@ -279,6 +279,32 @@ describe('#run.ts', function () {
     };
 
     await run(runParameters);
+  });
+
+  it('should extract rar with customized rar decompressor function', async function () {
+    // set up the run parameters
+    const runParameters: RunParameters = {
+      file: getFilePath('sample_rar_only.rar'),
+      dest: getExtractedPath('sample_rar_only.rar'),
+      plugin: {
+        extract: {
+          rar: 'test/example-rar.extractor.js', // path to the custom plugin
+        },
+      },
+      bail: false,
+    };
+    await run(runParameters);
+    const actualPath = getExtractedPath('sample_rar_only.rar');
+    console.log('RAR extracted path:', actualPath);
+    const fileTree = tree(actualPath, treeOptions);
+    console.log('RAR extracted tree:\n' + fileTree);
+    expect(fileTree).toEqual(`sample_rar_only.rar.extracted
+└── sample_normal_nest_structure.tar.zip.extracted
+    ├── sample_normal_nest_structure.tar.extracted
+    │   ├── some-file.txt
+    │   └── some_dir
+    │       └── some_file.txt
+    └── some-file-A.txt`);
   });
 
   // test: it should work when all extractors are customized for a file that is nested compressed by tar, zip, xz
