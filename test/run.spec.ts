@@ -2,7 +2,8 @@ import { rimraf } from 'rimraf';
 import { logger } from '../src/Extractor';
 import { getPluginFunctions, run, RunParameters } from '../src/run';
 import { getExtractedPath, getFilePath } from './test-util';
-
+import path from 'path';
+import fs from 'fs';
 import tree from 'tree-node-cli';
 
 const treeOptions = {sizes: false};
@@ -103,9 +104,11 @@ describe('#run.ts', function () {
       tar:  'test/resource/testplugin.js',
       xz:  'test/resource/testplugin.js'
     });
-    expect(await pluginFunctions?.zip?.(5,6)).toEqual(123);
-    expect(await pluginFunctions?.tar?.(5,6)).toEqual(123);
-    expect(await pluginFunctions?.xz?.(5,6)).toEqual(123);
+    // Pass correct parameter types: (filePath: string, options: {dir: string})
+    const options = { dir: '/tmp/test' };
+    expect(await pluginFunctions?.zip?.('test.zip', options)).toEqual(123);
+    expect(await pluginFunctions?.tar?.('test.tar', options)).toEqual(123);
+    expect(await pluginFunctions?.xz?.('test.xz', options)).toEqual(123);
   });
 
   let testFileNames: string[] = [];
@@ -236,7 +239,7 @@ describe('#run.ts', function () {
     // set up the run parameters
     const runParameters: RunParameters = {
       file: getFilePath('testplugin.js.zip'),
-      dest: getExtractedPath('testplugin.js.zip.extracted'),
+      dest: getExtractedPath('testplugin.js.zip'),
       plugin: {
         extract: {
           zip: 'test/example-zip.extractor.js', // path to the custom plugin
@@ -245,15 +248,26 @@ describe('#run.ts', function () {
       bail: false,
     };
 
-    await run(runParameters)
+    await run(runParameters);
+    
+    // Verify the extraction succeeded and files exist
+    const extractedPath = getExtractedPath('testplugin.js.zip');
+    const fileTree = tree(extractedPath, treeOptions);
+    expect(fileTree).toEqual(`testplugin.js.zip.extracted
+└── test
+    └── resource
+        └── testplugin.js`);
+    // Verify the extracted file content
+    const extractedFile = path.join(extractedPath, 'test', 'resource', 'testplugin.js');
+    expect(fs.existsSync(extractedFile)).toBe(true);
+    const content = fs.readFileSync(extractedFile, 'utf-8');
+    expect(content).toContain('exports.default=function');
   });
 
   it('should extract tar with customized tar decompressor funtion', async function () {
-    // set up the run parameters
-    const myCustomDecompressorFunction = async (filePath: string) => {};
     const runParameters: RunParameters = {
       file: getFilePath('testplugin.js.tar'),
-      dest: getExtractedPath('testplugin.js.tar.extracted'),
+      dest: getExtractedPath('testplugin.js.tar'),
       plugin: {
         extract: {
           tar: 'test/example-tar.extractor.js', // path to the custom plugin
@@ -263,22 +277,44 @@ describe('#run.ts', function () {
     };
 
     await run(runParameters);
+
+    // Verify the extraction succeeded and files exist
+    const extractedPath = getExtractedPath('testplugin.js.tar');
+    const fileTree = tree(extractedPath, treeOptions);
+    expect(fileTree).toEqual(`testplugin.js.tar.extracted
+└── resource
+    └── testplugin.js`);
+    // Verify the extracted file content
+    const extractedFile = path.join(extractedPath, 'resource', 'testplugin.js');
+    expect(fs.existsSync(extractedFile)).toBe(true);
+    const content = fs.readFileSync(extractedFile, 'utf-8');
+    expect(content).toContain('exports.default=function');
   });
 
   it('should extract xz with customized xz decompressor funtion', async function () {
-    // set up the run parameters
     const runParameters: RunParameters = {
       file: getFilePath('testplugin.js.xz'),
-      dest: getExtractedPath('testplugin.js.xz.extracted'),
+      dest: getExtractedPath('testplugin.js.xz'),
       plugin: {
         extract: {
-          xz: 'test/example-xz.extractor.js', // path to the custom plugin
+          xz: 'test/example-xz.extractor.js',
         },
       },
       bail: false,
     };
 
     await run(runParameters);
+
+    // Verify the extraction succeeded and files exist
+    const extractedPath = getExtractedPath('testplugin.js.xz');
+    const fileTree = tree(extractedPath, treeOptions);
+    expect(fileTree).toEqual(`testplugin.js.xz.extracted
+└── testplugin.js`);
+    // Verify the extracted file content
+    const extractedFile = path.join(extractedPath, 'testplugin.js');
+    expect(fs.existsSync(extractedFile)).toBe(true);
+    const content = fs.readFileSync(extractedFile, 'utf-8');
+    expect(content).toContain('exports.default=function');
   });
 
   it('should extract rar with customized rar decompressor function', async function () {
