@@ -25,6 +25,7 @@
     ]
   },
   "scripts": {
+    "npx": "npx",
     "testpack": "rm ./tmp/* -rf && npm pack --pack-destination=./tmp",
     "test": "npx jest --debug",
     "lint": "tsc --noEmit",
@@ -60,6 +61,8 @@
     "tar": "^6.1.13"
   },
   "devDependencies": {
+    "node-unrar-js": "2.0.2",
+    "rar-stream": "3.3.0",
     "@babel/preset-env": "7.20.2",
     "@babel/preset-typescript": "7.21.0",
     "@types/inquirer": "^9.0.3",
