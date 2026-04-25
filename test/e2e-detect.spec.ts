@@ -1,4 +1,3 @@
-import { rimraf } from 'rimraf';
 import { run } from '../src/run';
 import { getExtractedPath, getFilePath } from './test-util';
 import tree from 'tree-node-cli';
@@ -14,7 +13,7 @@ describe('e2e: detectCompression integration', () => {
       try { fs.unlinkSync(f); } catch(e) {}
     }
     for (const name of ['tmp_sample_zip_noext', 'tmp_sample_xz_noext', 'tmp_sample_tar_noext', 'tmp_sample_zip_contains_extensionless_xz']) {
-      rimraf.rimrafSync(getExtractedPath(name));
+      fs.rmSync(getExtractedPath(name), { recursive: true, force: true });
     }
   });
 
@@ -51,7 +50,7 @@ describe('e2e: detectCompression integration', () => {
   it('recursively extracts ZIP containing extensionless XZ inner file', async () => {
     const src = getFilePath('sample_zip_contains_extensionless_xz.zip');
     const dest = getExtractedPath('tmp_sample_zip_contains_extensionless_xz');
-    rimraf.rimrafSync(dest);
+    fs.rmSync(dest, { recursive: true, force: true });
 
     await run({ file: src, dest });
 

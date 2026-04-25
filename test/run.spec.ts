@@ -1,4 +1,3 @@
-import { rimraf } from 'rimraf';
 import { logger } from '../src/Extractor';
 import { getPluginFunctions, run, RunParameters } from '../src/run';
 import { getExtractedPath, getFilePath } from './test-util';
@@ -114,7 +113,7 @@ describe('#run.ts', function () {
   let testFileNames: string[] = [];
   afterEach(() => {
     for (const testFileName of testFileNames) {
-      rimraf.rimrafSync(getExtractedPath(testFileName));
+      fs.rmSync(getExtractedPath(testFileName), { recursive: true, force: true });
     }
     testFileNames = [];
   });

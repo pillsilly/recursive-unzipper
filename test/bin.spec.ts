@@ -1,14 +1,15 @@
 import {$} from 'zx';
-import {rimraf} from 'rimraf';
+import fs from 'fs';
 
 describe('#bin.ts', () => {
-  
+
   const filePath = 'test/resource/sample_zip_contains_xz.zip';
 
   afterEach(() => {
     for (const testFileName of [filePath]) {
-      rimraf.rimrafSync(
-        `${testFileName}.extracted`
+      fs.rmSync(
+        `${testFileName}.extracted`,
+        { recursive: true, force: true }
       );
     }
   });

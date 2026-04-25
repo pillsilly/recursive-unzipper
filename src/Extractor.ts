@@ -5,7 +5,6 @@ import tar from 'tar';
 import pino from 'pino';
 import detectCompression from './detectCompression';
 
-import {rimraf} from 'rimraf';
 import * as defaultZipExtractor from 'extract-zip';
 
 export const logger = pino({
@@ -241,9 +240,9 @@ export class Extractor {
   }
 
   private async loopFiles(outputPath: string) {
-    const recursive = require('recursive-readdir');
-    const filePathArray: string[] = await recursive(outputPath);
-    for await (const file of filePathArray) {
+    const entries = await fs.promises.readdir(outputPath, { recursive: true, withFileTypes: true });
+    const filePathArray = entries.filter(e => e.isFile()).map(e => path.join(e.parentPath, e.name));
+    for (const file of filePathArray) {
       if (this.shouldExtract(file)) {
         const newExtractor = new Extractor({
           filePath: file,
@@ -252,7 +251,7 @@ export class Extractor {
           pluginFunctions: this.pluginFunctions,
         });
         await newExtractor.extract();
-        rimraf.rimrafSync(file);
+        fs.rmSync(file, { recursive: true, force: true });
       }
     }
   }
