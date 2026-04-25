@@ -45,4 +45,34 @@ describe('#bin.ts', () => {
       expect(output).toMatch(/Extraction (completed successfully)/);
     });
   });
+
+  it('should detect zip type with --detect flag', async function() {
+    return $`npx ts-node src/bin.ts test/resource/sample_normal_nest_structure.zip --detect`.then(po => {
+      const output = po.toString().trim();
+      expect(output).toContain('Detected compression type: zip');
+    });
+  });
+
+  it('should detect xz type with --detect flag', async function() {
+    return $`npx ts-node src/bin.ts test/resource/text_in_xz.log.xz --detect`.then(po => {
+      const output = po.toString().trim();
+      expect(output).toContain('Detected compression type: xz');
+    });
+  });
+
+  it('should detect rar type with --detect flag', async function() {
+    return $`npx ts-node src/bin.ts test/resource/sample_rar_only.rar --detect`.then(po => {
+      const output = po.toString().trim();
+      expect(output).toContain('Detected compression type: rar');
+    });
+  });
+
+  it('should report unknown type with --detect flag for plain text', async function() {
+    try {
+      await $`npx ts-node src/bin.ts test/resource/testplugin.js --detect`;
+      fail('Expected command to exit with non-zero code');
+    } catch (err: any) {
+      expect(err.stdout || err.message).toContain('Detected compression type: unknown');
+    }
+  });
 });

@@ -12,3 +12,6 @@ package-lock.json
 **/**/qt-every*
 tmp
 tsconfig.tsbuildinfo
+**/speckit*
+**/.specify/**
+repomix-output.xml
