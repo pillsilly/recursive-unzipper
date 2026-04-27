@@ -61,7 +61,6 @@
     "rar-stream": "3.3.0",
     "@babel/preset-env": "7.29.2",
     "@babel/preset-typescript": "7.28.5",
-    "@types/inquirer": "9.0.9",
     "@types/jest": "29.5.14",
     "@types/lzma-native": "4.0.4",
     "@types/node": "18.19.130",
