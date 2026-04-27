@@ -4,6 +4,7 @@ import {CommanderError, InvalidArgumentError, InvalidOptionArgumentError, progra
 import pkgJson from '../package.json';
 import {run} from './run';
 import detectCompression from './detectCompression';
+import {logger} from './Extractor';
 import path from 'path';
 import fs from 'fs';
 
@@ -12,16 +13,16 @@ import fs from 'fs';
   try {
     runArgs = getOptions();
     await run(runArgs);
-    console.log('Extraction completed successfully');
+    logger.success('Extraction completed successfully');
   } catch (err: any) {
     if (err && err.message && err.message.startsWith('Failed to extract:')) {
       if (runArgs && runArgs.bail) {
-        console.log('Extraction failed');
+        logger.fail('Extraction failed');
       } else {
-        console.log('Extraction partially succeeded');
+        logger.partial('Extraction partially succeeded');
       }
     } else {
-      console.log('Extraction failed');
+      logger.fail('Extraction failed');
     }
     process.exit(1);
   }
@@ -36,10 +37,10 @@ function getOptions() {
     .argument('[file]', 'The first argument is treated as the Path of target file. (Legacy way is through the option "-f")', validatePath(InvalidArgumentError))
     .option('-f --file [file]', 'Path of the file to be extract', validatePath())
     .option(
-      '-ds --dest [destination directory]',
+      '-d --dest [destination directory]',
       'The destination directory where file will be extracted; if not specified, a same name directory will be created aside of the zip file as the "destination directory"'
     )
-    .option('-bail --bail [bail]', "If true then it won't continue when error is captured", false)
+    .option('-b --bail', "If true then it won't continue when error is captured", false)
     .option(
       '-m --map [map]',
       'If you are certain about specific type of files were compressed by any of the supported algorithm, e.g, jar can be extracted by zip algorithm; you can then acknowledge recursive-unzipper by passing this flag: e.g --map "jar|zip"' ,
@@ -58,7 +59,10 @@ function getOptions() {
   const {file: fileInOpts} = opts;
 
   if (!!file === !!fileInOpts) {
-    throw new CommanderError(1, '', 'File must be appointed in either command arg or option');
+    program.outputHelp();
+    console.log();
+    console.error('Error: File must be appointed in either command arg or option');
+    process.exit(1);
   }
 
   // Parse plugin options

@@ -32,7 +32,7 @@
     "compile:prod": "rm -r dist/* && npx tsup && ls -lha dist",
     "prerelease": "npm run compile:prod",
     "release": "npx release-it",
-    "run:dev": "ts-node src/bin.ts ./test/resource/sample_zip_contains_jar.zip"
+    "run:dev": "tsx src/bin.ts ./test/resource/sample_zip_contains_jar.zip"
   },
   "files": [
     "/dist",
@@ -49,33 +49,30 @@
   },
   "homepage": "https://github.com/pillsilly/recursive-unzipper#readme",
   "dependencies": {
-    "commander": "11.1.0",
+    "commander": "14.0.3",
     "extract-zip": "2.0.1",
     "lzma-native": "8.0.6",
-    "pino": "8.21.0",
-    "pino-pretty": "9.4.1",
-    "tar": "6.2.1"
+    "tar": "7.5.13"
   },
   "devDependencies": {
-    "node-unrar-js": "2.0.2",
-    "rar-stream": "3.3.0",
     "@babel/preset-env": "7.29.2",
     "@babel/preset-typescript": "7.28.5",
-    "@types/jest": "29.5.14",
+    "@types/jest": "30.0.0",
     "@types/lzma-native": "4.0.4",
-    "@types/node": "18.19.130",
-    "@types/tar": "6.1.13",
+    "@types/node": "25.6.0",
     "esbuild": "0.28.0",
     "esbuild-jest": "0.5.0",
-    "jest": "29.7.0",
-    "prettier": "2.8.8",
-    "release-it": "15.11.0",
+    "jest": "30.3.0",
+    "node-unrar-js": "2.0.2",
+    "prettier": "3.8.3",
+    "rar-stream": "5.7.2",
+    "release-it": "20.0.1",
     "tree-node-cli": "1.6.0",
     "ts-jest": "29.4.9",
-    "ts-node": "10.9.2",
-    "tsup": "7.3.0",
-    "typescript": "5.9.3",
-    "zx": "7.2.4"
+    "tsup": "8.5.1",
+    "tsx": "4.21.0",
+    "typescript": "6.0.3",
+    "zx": "8.8.5"
   },
   "prettier": {
     "printWidth": 180,
