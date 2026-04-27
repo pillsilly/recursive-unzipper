@@ -54,7 +54,7 @@
     "lzma-native": "8.0.6",
     "pino": "8.21.0",
     "pino-pretty": "9.4.1",
-    "tar": "6.2.1"
+    "tar": "7.5.11"
   },
   "devDependencies": {
     "node-unrar-js": "2.0.2",
