@@ -3,6 +3,7 @@
 import {CommanderError, InvalidArgumentError, InvalidOptionArgumentError, program} from 'commander';
 import pkgJson from '../package.json';
 import {run} from './run';
+import detectCompression from './detectCompression';
 import path from 'path';
 import fs from 'fs';
 
@@ -45,11 +46,13 @@ function getOptions() {
       undefined
     )
     .option('--plugin <type:path>', 'Custom plugin for extraction, e.g. --plugin zip:./plugin.js', collectPlugins, [])
+    .option('--detect', 'Detect compression type without extracting')
     .parse(process.argv);
   
   // Extend opts type to allow plugin options
   const opts = program.opts() as Parameters<typeof run>[0] & {
     plugin?: { extract: Record<string, string> };
+    detect?: boolean;
   };
   const [file ] = program.processedArgs;
   const {file: fileInOpts} = opts;
@@ -71,6 +74,14 @@ function getOptions() {
   console.log(`Args: ${program.processedArgs}`)
   console.log(`Opts: ${JSON.stringify(opts)}`);
   opts.file = opts.file || file;
+
+  // Detect-only mode: report compression type and exit without extracting
+  if (opts.detect) {
+    const type = detectCompression(opts.file as string);
+    console.log(`Detected compression type: ${type}`);
+    process.exit(type === 'unknown' ? 1 : 0);
+  }
+
   return opts;
 }
 

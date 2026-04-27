@@ -1,4 +1,3 @@
-import { rimraf } from 'rimraf';
 import { logger } from '../src/Extractor';
 import { getPluginFunctions, run, RunParameters } from '../src/run';
 import { getExtractedPath, getFilePath } from './test-util';
@@ -114,7 +113,7 @@ describe('#run.ts', function () {
   let testFileNames: string[] = [];
   afterEach(() => {
     for (const testFileName of testFileNames) {
-      rimraf.rimrafSync(getExtractedPath(testFileName));
+      fs.rmSync(getExtractedPath(testFileName), { recursive: true, force: true });
     }
     testFileNames = [];
   });
@@ -341,6 +340,34 @@ describe('#run.ts', function () {
     │   └── some_dir
     │       └── some_file.txt
     └── some-file-A.txt`);
+  });
+
+  it('should use custom zip plugin when file detected as zip by magic bytes (no extension)', async function () {
+    const src = getFilePath('sample_normal_nest_structure.zip');
+    const tmp = path.join(path.dirname(src), 'tmp_plugin_detect_zip_noext');
+    fs.copyFileSync(src, tmp);
+    testFileNames.push('tmp_plugin_detect_zip_noext');
+
+    let pluginCalled = false;
+    const mockZipPlugin = async (filePath: string, options: { dir: string }) => {
+      pluginCalled = true;
+      // Use the real extract-zip to actually extract
+      const extractZip = require('extract-zip');
+      await extractZip(filePath, { dir: options.dir });
+    };
+
+    const { Extractor } = require('../src/Extractor');
+    const extMapping = Extractor.appendExtMapping(undefined);
+    const extractor = new Extractor({
+      filePath: tmp,
+      dest: getExtractedPath('tmp_plugin_detect_zip_noext'),
+      bail: false,
+      extMapping,
+      pluginFunctions: { zip: mockZipPlugin },
+    });
+    await extractor.extract();
+
+    expect(pluginCalled).toBe(true);
   });
 
   // test: it should work when all extractors are customized for a file that is nested compressed by tar, zip, xz

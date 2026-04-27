@@ -10,5 +10,10 @@ package-lock.json
 /test/resource/run_zip
 **/*.extracted/
 **/**/qt-every*
-tmp
+.tmp
 tsconfig.tsbuildinfo
+**/speckit*
+**/.specify/**
+repomix-output.xml
+tmp
+.claude

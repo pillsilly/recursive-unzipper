@@ -3,8 +3,8 @@ import path, { extname } from 'path';
 import lzma from 'lzma-native';
 import tar from 'tar';
 import pino from 'pino';
+import detectCompression from './detectCompression';
 
-import {rimraf} from 'rimraf';
 import * as defaultZipExtractor from 'extract-zip';
 
 export const logger = pino({
@@ -143,8 +143,28 @@ export class Extractor {
       if (handled) break;
     }
     if (!handled) {
-      logger.error(`No extractor found or no files decompressed for: ${this.filePath}`);
-      throw new Error(`Failed to extract:${this.filePath} (no files decompressed)`);
+      // Try magic-byte detection for files without extensions or unknown suffixes
+      const detected = detectCompression(this.filePath);
+      if (detected !== 'unknown') {
+        if (this.pluginFunctions && typeof this.pluginFunctions[detected] === 'function') {
+          await this.pluginFunctions[detected](this.filePath, { dir: this.outPutPath });
+          handled = true;
+        } else if (detected === 'zip') {
+          await this.extractZip();
+          handled = true;
+        } else if (detected === 'xz') {
+          await this.extractXz();
+          handled = true;
+        } else if (detected === 'tar') {
+          this.extractTar();
+          handled = true;
+        }
+      }
+
+      if (!handled) {
+        logger.error(`No extractor found or no files decompressed for: ${this.filePath}`);
+        throw new Error(`Failed to extract:${this.filePath} (no files decompressed)`);
+      }
     }
     await this.loopFiles(this.outPutPath);
   }
@@ -194,7 +214,11 @@ export class Extractor {
     });
 
     function unwrapXzExtension(fileName: string) {
-      return fileName.toLowerCase().replace('.xz', '').split('/').pop();
+      if (fileName.toLowerCase().endsWith('.xz')) {
+        return fileName.toLowerCase().replace(/\.xz$/, '').split('/').pop();
+      }
+      // No .xz extension: append .decompressed to distinguish from the compressed source
+      return (fileName.split('/').pop() || fileName) + '.decompressed';
     }
   }
 
@@ -216,10 +240,10 @@ export class Extractor {
   }
 
   private async loopFiles(outputPath: string) {
-    const recursive = require('recursive-readdir');
-    const filePathArray: string[] = await recursive(outputPath);
-    for await (const file of filePathArray) {
-      if (this.isZip(file) || this.isTar(file) || this.isXZ(file)) {
+    const entries = await fs.promises.readdir(outputPath, { recursive: true, withFileTypes: true });
+    const filePathArray = entries.filter(e => e.isFile()).map(e => path.join(e.parentPath, e.name));
+    for (const file of filePathArray) {
+      if (this.shouldExtract(file)) {
         const newExtractor = new Extractor({
           filePath: file,
           bail: this.bail,
@@ -227,22 +251,24 @@ export class Extractor {
           pluginFunctions: this.pluginFunctions,
         });
         await newExtractor.extract();
-        rimraf.rimrafSync(file);
+        fs.rmSync(file, { recursive: true, force: true });
       }
     }
   }
 
-  private isTar(fileNameOrPath: string) {
-    return this.extMapping.tar.some((suffix) => isFileType(fileNameOrPath, suffix));
+  private shouldExtract(file: string): boolean {
+    if (this.matchesAnyExtMapping(file)) return true;
+    const detected = detectCompression(file);
+    return detected !== 'unknown';
   }
 
-  private isZip(fileNameOrPath: string) {
-    
-    return this.extMapping.zip.some((suffix) => isFileType(fileNameOrPath, suffix));
-  }
-
-  private isXZ(fileNameOrPath: string) {
-    return this.extMapping.xz.some((suffix) => isFileType(fileNameOrPath, suffix));
+  private matchesAnyExtMapping(file: string): boolean {
+    for (const type of Object.keys(this.extMapping)) {
+      for (const suffix of this.extMapping[type as keyof extMappingType]) {
+        if (isFileType(file, suffix)) return true;
+      }
+    }
+    return false;
   }
 
   public static appendExtMapping(map: string | undefined) {
