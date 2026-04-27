@@ -4,6 +4,7 @@ import {CommanderError, InvalidArgumentError, InvalidOptionArgumentError, progra
 import pkgJson from '../package.json';
 import {run} from './run';
 import detectCompression from './detectCompression';
+import {logger} from './Extractor';
 import path from 'path';
 import fs from 'fs';
 
@@ -12,16 +13,16 @@ import fs from 'fs';
   try {
     runArgs = getOptions();
     await run(runArgs);
-    console.log('Extraction completed successfully');
+    logger.success('Extraction completed successfully');
   } catch (err: any) {
     if (err && err.message && err.message.startsWith('Failed to extract:')) {
       if (runArgs && runArgs.bail) {
-        console.log('Extraction failed');
+        logger.fail('Extraction failed');
       } else {
-        console.log('Extraction partially succeeded');
+        logger.partial('Extraction partially succeeded');
       }
     } else {
-      console.log('Extraction failed');
+      logger.fail('Extraction failed');
     }
     process.exit(1);
   }

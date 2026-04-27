@@ -2,22 +2,46 @@ import fs from 'fs';
 import path, { extname } from 'path';
 import lzma from 'lzma-native';
 import tar from 'tar';
-import pino from 'pino';
 import detectCompression from './detectCompression';
 
 import * as defaultZipExtractor from 'extract-zip';
 
-export const logger = pino({
-  name: 'recursive-unzipper',
-  base: {},
-  timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"`,
-  transport: {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-    },
+// Custom logger that mimics pino's interface for easy replacement later
+const colors = {
+  reset: '\x1b[0m',
+  green: '\x1b[32m',
+  red: '\x1b[31m',
+  yellow: '\x1b[33m',
+  cyan: '\x1b[36m',
+  gray: '\x1b[90m',
+  bold: '\x1b[1m',
+  bgGreen: '\x1b[42m',
+  bgRed: '\x1b[41m',
+  bgYellow: '\x1b[43m'
+};
+
+export const logger = {
+  info: (message: string) => {
+    const time = new Date(Date.now()).toISOString();
+    console.log(`${colors.gray}[${time}]${colors.reset} ${colors.green}INFO${colors.reset} (recursive-unzipper): ${message}`);
   },
-});
+  error: (message: string, err?: any) => {
+    const time = new Date(Date.now()).toISOString();
+    console.error(`${colors.gray}[${time}]${colors.reset} ${colors.red}ERROR${colors.reset} (recursive-unzipper): ${message}`);
+    if (err) {
+      console.error(`${colors.red}${err}${colors.reset}`);
+    }
+  },
+  success: (message: string) => {
+    console.log(`\n✅${colors.reset} ${colors.bold}${colors.green}${message}${colors.reset}\n`);
+  },
+  fail: (message: string) => {
+    console.log(`\n❌ FAILURE ${colors.reset} ${colors.bold}${colors.red}${message}${colors.reset}\n`);
+  },
+  partial: (message: string) => {
+    console.log(`\n⚠️ PARTIAL ${colors.reset} ${colors.bold}${colors.yellow}${message}${colors.reset}\n`);
+  }
+};
 
 const SUFFIX = {
   XZ: '.xz',
@@ -36,14 +60,6 @@ type extMappingType = {
   [key in 'zip' | 'tar' | 'xz' | string]: string[];
 };
 
-type pluginType = {
-  extract: {
-    zip: string,
-    tar: string,
-    xz: string
-  }
-}
-
 type ExtractorType = () => Promise<any> | void;
 export type PluginFunctionsType = {
   [key: string]: (filePath: string, options: any) => Promise<void>;
@@ -57,7 +73,6 @@ export class Extractor {
   private bail: boolean;
   private extMapping: extMappingType;
   private pluginFunctions: PluginFunctionsType;
-  private basePath: string = '';
   private zipExtractor: ExtractorType;
   private xzExtractor: ExtractorType;
   private tarExtractor: ExtractorType;
@@ -106,7 +121,6 @@ export class Extractor {
     if (!tmpFileName) throw Error(`Illegal filename ${filePath}`);
     this.fileName = tmpFileName;
 
-    this.basePath = chopped.slice(0, chopped.length - 1).join(path.sep);
     if (dest) {
       this.outPutPath = path.resolve(dest);
     } else {
