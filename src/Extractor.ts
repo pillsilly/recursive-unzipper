@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path, { extname } from 'path';
 import lzma from 'lzma-native';
-import tar from 'tar';
+import * as tar from 'tar';
 import detectCompression from './detectCompression';
 
 import * as defaultZipExtractor from 'extract-zip';

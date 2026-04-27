@@ -37,10 +37,10 @@ function getOptions() {
     .argument('[file]', 'The first argument is treated as the Path of target file. (Legacy way is through the option "-f")', validatePath(InvalidArgumentError))
     .option('-f --file [file]', 'Path of the file to be extract', validatePath())
     .option(
-      '-ds --dest [destination directory]',
+      '-d --dest [destination directory]',
       'The destination directory where file will be extracted; if not specified, a same name directory will be created aside of the zip file as the "destination directory"'
     )
-    .option('-bail --bail [bail]', "If true then it won't continue when error is captured", false)
+    .option('-b --bail', "If true then it won't continue when error is captured", false)
     .option(
       '-m --map [map]',
       'If you are certain about specific type of files were compressed by any of the supported algorithm, e.g, jar can be extracted by zip algorithm; you can then acknowledge recursive-unzipper by passing this flag: e.g --map "jar|zip"' ,
