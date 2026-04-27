@@ -58,7 +58,10 @@ function getOptions() {
   const {file: fileInOpts} = opts;
 
   if (!!file === !!fileInOpts) {
-    throw new CommanderError(1, '', 'File must be appointed in either command arg or option');
+    program.outputHelp();
+    console.log();
+    console.error('Error: File must be appointed in either command arg or option');
+    process.exit(1);
   }
 
   // Parse plugin options
