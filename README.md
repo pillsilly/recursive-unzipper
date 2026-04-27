@@ -21,17 +21,16 @@ Arguments:
   file                                The first argument is treated as the path of the target file. (Legacy way is through the option "-f")
 
 Options:
-  -V, --version                       Output the version number
-  -f --file [file]                    Path of the file to be extracted
-  -ds --dest [destination directory]  The destination directory where the file will be extracted; if not specified, a directory with the same name will be
-                                      created beside the zip file as the "destination directory"
-  -bail --bail [bail]                 If true, the process will stop when an error is encountered (default: false)
-  -m --map [map]                      If you know that specific types of files were compressed using any of the supported algorithms, e.g.,
-                                      jar files can be extracted using the zip algorithm, you can inform recursive-unzipper by passing this flag:
-                                      e.g., --map "jar|zip", which means to treat .jar files as .zip files
-  --plugin <type:path>                Use a custom extraction plugin for a given type (zip, tar, xz, rar, etc). Example: --plugin zip:./my-zip.js --plugin rar:./my-rar.js
-  --detect                            Detect compression type (zip, xz, tar, rar, unknown) without extracting; exits 0 for known types, 1 for unknown
-  -h, --help                          Display help for the command
+  -V, --version                      Output the version number
+  -f --file [file]                   Path of the file to be extract
+  -d --dest [destination directory]  The destination directory where file will be extracted; if not specified, a same name directory will be created aside of the zip
+                                     file as the "destination directory"
+  -b --bail                          If true then it won't continue when error is captured (default: false)
+  -m --map [map]                     If you are certain about specific type of files were compressed by any of the supported algorithm, e.g, jar can be extracted by zip
+                                     algorithm; you can then acknowledge recursive-unzipper by passing this flag: e.g --map "jar|zip"
+  --plugin <type:path>               Custom plugin for extraction, e.g. --plugin zip:./plugin.js (default: [])
+  --detect                           Detect compression type without extracting
+  -h, --help                         Display help for the command
 ```
 
 ## Supported Formats
@@ -87,7 +86,7 @@ module.exports = async function(filePath, options) {
 - If no files are decompressed, extraction fails and logs an error.
 - If `--bail` is set, extraction stops on the first error.
 
-## For development (using ts-node)
+## For development (using tsx)
 `npm run run:dev`
 
 ## Module Support
@@ -97,7 +96,7 @@ module.exports = async function(filePath, options) {
 `detectCompression(filePath)` returns `'zip' | 'xz' | 'tar' | 'rar' | 'unknown'`.
 
 ## Build
-`npm run build`
+`npm run compile:prod`
 
 ## Lint
 `npm run lint`
