@@ -20,7 +20,7 @@ export type RunParameters = {
   };
 };
 
-async function run({file = '', dir = '', name = '', dest = '', bail = false, map = '', plugin = {
+async function run({file = '', dir: _dir = '', name: _name = '', dest = '', bail = false, map = '', plugin = {
   // draw type for this parameter below:
   extract: {
     zip: '',
@@ -44,12 +44,10 @@ async function run({file = '', dir = '', name = '', dest = '', bail = false, map
 export {run, getPluginFunctions};
 
 
-async function getPluginFunctions(locations: {[key in 'zip' | 'tar' | 'xz' | 'rar']: string} | {}) {
+async function getPluginFunctions(locations: Record<string, string>) {
   const pluginFunctions: PluginFunctionsType = {}
   for (const key of Object.keys(locations)) {
-    // @ts-ignore
     if (!locations[key]) continue;
-    // @ts-ignore
     const pluginLocation = path.resolve(locations[key]);
     if (!fs.existsSync(pluginLocation)) continue;
     const extractorPluggedIn = require(pluginLocation).default || require(pluginLocation);

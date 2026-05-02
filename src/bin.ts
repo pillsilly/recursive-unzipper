@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import {CommanderError, InvalidArgumentError, InvalidOptionArgumentError, program} from 'commander';
+import {InvalidArgumentError, InvalidOptionArgumentError, program} from 'commander';
 import pkgJson from '../package.json';
 import {run} from './run';
 import detectCompression from './detectCompression';
@@ -14,8 +14,8 @@ import fs from 'fs';
     runArgs = getOptions();
     await run(runArgs);
     logger.success('Extraction completed successfully');
-  } catch (err: any) {
-    if (err && err.message && err.message.startsWith('Failed to extract:')) {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.startsWith('Failed to extract:')) {
       if (runArgs && runArgs.bail) {
         logger.fail('Extraction failed');
       } else {
@@ -95,7 +95,7 @@ process.on('uncaughtException', function (err) {
   process.exit(1);
 });
 
-function validatePath(ErrorType = InvalidOptionArgumentError) {
+function validatePath(_ErrorType = InvalidOptionArgumentError) {
   return (file: string) => {
     const filePath = path.resolve(file);
     if(!fs.existsSync(filePath)) {

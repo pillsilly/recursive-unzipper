@@ -1,4 +1,3 @@
-import { logger } from '../src/Extractor';
 import { getPluginFunctions, run, RunParameters } from '../src/run';
 import { getExtractedPath, getFilePath } from './test-util';
 import path from 'path';
@@ -94,7 +93,6 @@ const bailTestFiles2 = {
 };
 
 describe('#run.ts', function () {
-  logger.level = 'debug';
 
   // write UT for getPluginFunctions with jest mock is too complex, so I just leave it here.
   it('should getPluginFunctions work', async function () {

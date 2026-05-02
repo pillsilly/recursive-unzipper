@@ -72,8 +72,9 @@ describe('#bin.ts', () => {
     try {
       await $`npx tsx src/bin.ts test/resource/testplugin.js --detect`;
       fail('Expected command to exit with non-zero code');
-    } catch (err: any) {
-      expect(err.stdout || err.message).toContain('Detected compression type: unknown');
+    } catch (err: unknown) {
+      const cmdErr = err as { stdout?: string; message?: string };
+      expect(cmdErr.stdout || cmdErr.message).toContain('Detected compression type: unknown');
     }
   });
 });

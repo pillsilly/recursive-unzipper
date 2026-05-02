@@ -78,7 +78,7 @@ function isLikelyTarHeader(buf: Uint8Array): boolean {
   let storedChecksum = 0;
   let foundDigit = false;
   for (let i = 148; i < 156; i++) {
-    const c = buf[i];
+    const c = buf[i]!;
     if (c >= 0x30 && c <= 0x37) { // octal digit
       storedChecksum = storedChecksum * 8 + (c - 0x30);
       foundDigit = true;
@@ -96,7 +96,7 @@ function isLikelyTarHeader(buf: Uint8Array): boolean {
     if (i >= 148 && i < 156) {
       computedChecksum += 0x20;
     } else {
-      computedChecksum += buf[i];
+      computedChecksum += buf[i]!;
     }
   }
 

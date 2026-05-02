@@ -25,7 +25,7 @@ export const logger = {
     const time = new Date(Date.now()).toISOString();
     console.log(`${colors.gray}[${time}]${colors.reset} ${colors.green}INFO${colors.reset} (recursive-unzipper): ${message}`);
   },
-  error: (message: string, err?: any) => {
+  error: (message: string, err?: unknown) => {
     const time = new Date(Date.now()).toISOString();
     console.error(`${colors.gray}[${time}]${colors.reset} ${colors.red}ERROR${colors.reset} (recursive-unzipper): ${message}`);
     if (err) {
@@ -60,16 +60,15 @@ type extMappingType = {
   [key in 'zip' | 'tar' | 'xz' | string]: string[];
 };
 
-type ExtractorType = () => Promise<any> | void;
+type ExtractorType = () => Promise<void> | void;
 export type PluginFunctionsType = {
-  [key: string]: (filePath: string, options: any) => Promise<void>;
+  [key: string]: (filePath: string, options: { dir: string }) => Promise<void>;
 }
 export class Extractor {
   private readonly outPutPath: string = '';
   private readonly fileName: string = '';
 
   private filePath: string;
-  private dest?: string;
   private bail: boolean;
   private extMapping: extMappingType;
   private pluginFunctions: PluginFunctionsType;
@@ -92,7 +91,6 @@ export class Extractor {
   }) {
 
     this.filePath = filePath;
-    this.dest = dest;
     this.bail = bail;
     this.extMapping = extMapping;
    
@@ -107,13 +105,13 @@ export class Extractor {
     }
 
     this.xzExtractor = () => {
-      // @ts-ignore
-      return (pluginFunctions?.xz || this.defaultXzExtractor).bind(this)(this.filePath, {dir: this.outPutPath})
+      const xzFn = pluginFunctions?.xz ?? this.defaultXzExtractor.bind(this);
+      return xzFn(this.filePath, {dir: this.outPutPath});
     }
 
     this.tarExtractor = () => {
-      // @ts-ignore
-      return (pluginFunctions?.tar || this.defaultTarExtractor).bind(this)(this.filePath, {dir: this.outPutPath})
+      const tarFn = pluginFunctions?.tar ?? this.defaultTarExtractor.bind(this);
+      return tarFn(this.filePath, {dir: this.outPutPath});
     }
 
     const chopped = filePath.split(path.sep);
@@ -132,7 +130,7 @@ export class Extractor {
     createDirIfNotExist(this.outPutPath);
     let handled = false;
     for (const type of Object.keys(this.extMapping)) {
-      for (const suffix of this.extMapping[type as keyof extMappingType]) {
+      for (const suffix of this.extMapping[type as keyof extMappingType]!) {
         if (isFileType(this.filePath, suffix)) {
           // If a plugin is configured for this type, use it
           if (this.pluginFunctions && typeof this.pluginFunctions[type] === 'function') {
@@ -191,7 +189,7 @@ export class Extractor {
         sync: true,
         C: this.outPutPath, // alias for cwd:'some-dir', also ok
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error(getFailedToExtractMessage(this.filePath), err);
       if (this.bail) throw new Error(getFailedToExtractMessage(this.filePath));
     }
@@ -278,7 +276,7 @@ export class Extractor {
 
   private matchesAnyExtMapping(file: string): boolean {
     for (const type of Object.keys(this.extMapping)) {
-      for (const suffix of this.extMapping[type as keyof extMappingType]) {
+      for (const suffix of this.extMapping[type as keyof extMappingType]!) {
         if (isFileType(file, suffix)) return true;
       }
     }
@@ -298,7 +296,7 @@ export class Extractor {
       }
 
       const extension = extToMap ? `.${extToMap}` : '';
-      extMapping[fileType].push(extension);
+      extMapping[fileType]!.push(extension);
     }
 
     return extMapping;
