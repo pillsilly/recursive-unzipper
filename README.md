@@ -1,7 +1,7 @@
 # recursive-unzipper
 
 Recursively extract nested archives of any format — ZIP inside TAR inside XZ, and beyond.
-
+[![DeepWiki](https://img.shields.io/badge/Wiki-DeepWiki-blue)](https://deepwiki.com/pillsilly/recursive-unzipper) 
 ![npm version](https://img.shields.io/npm/v/recursive-unzipper) ![npm downloads](https://img.shields.io/npm/dm/recursive-unzipper)
 
 ## Features
